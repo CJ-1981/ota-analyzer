@@ -80,7 +80,9 @@ import type {
   RawDataRow,
 } from "@/lib/types";
 import { DEFAULT_OTA_CONFIG } from "@/lib/types";
-import { parseFile, autoDetectColumns } from "@/lib/data-parser";
+import { parseFile, autoDetectColumns, normalizeData } from "@/lib/data-parser";
+import { generateData } from "@/lib/data-generator";
+import { computeAnalytics, type AnalyticsResult } from "@/lib/analytics";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -600,72 +602,62 @@ export default function Home() {
     return ordered;
   }, [data, config.stateConfig.pipelineStates]);
 
-  // Fetch demo data
+  // Generate demo data & compute analytics (client-side)
   useEffect(() => {
     if (mode !== "demo") return;
-    let cancelled = false;
+    setLoading(true);
 
-    const doFetch = async () => {
-      const params = new URLSearchParams();
-      params.set("seed", String(seed));
-      params.set("data_size_mb", String(dataSizeMB));
-      if (entityFilter.length > 0) {
-        params.set("vehicle_id", entityFilter.join(","));
-      }
-      if (stateFilter.length > 0) {
-        params.set("state", stateFilter.join(","));
-      }
+    // Use setTimeout to avoid blocking UI during generation
+    const timer = setTimeout(() => {
       try {
-        const res = await fetch(`/api/analytics?${params.toString()}`);
-        const json = await res.json();
-        if (!cancelled) {
-          setData(json);
-          setPage(0);
-        }
+        const rawData = generateData(seed, dataSizeMB);
+        const rawRows: RawDataRow[] = rawData.map((entry) => ({
+          vehicle_id: entry.vehicle_id,
+          timestamp: entry.timestamp,
+          state: entry.state,
+          progress: entry.progress,
+          package_size_mb: entry.package_size_mb,
+          condition: entry.condition,
+        }));
+        const normalized = normalizeData(rawRows, DEFAULT_OTA_CONFIG.columnMapping);
+        const result = computeAnalytics(
+          normalized,
+          DEFAULT_OTA_CONFIG.stateConfig,
+          entityFilter.length > 0 ? entityFilter : undefined,
+          stateFilter.length > 0 ? stateFilter : undefined
+        );
+        setData(result);
+        setPage(0);
       } catch (err) {
-        if (!cancelled) console.error("Failed to fetch analytics:", err);
+        console.error("Failed to generate demo analytics:", err);
       }
-      if (!cancelled) setLoading(false);
-    };
+      setLoading(false);
+    }, 0);
 
-    doFetch();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => clearTimeout(timer);
   }, [seed, entityFilter, stateFilter, mode, dataSizeMB]);
 
-  // Fetch custom data
-  const runCustomAnalysis = useCallback(async () => {
+  // Run custom analysis (client-side)
+  const runCustomAnalysis = useCallback(() => {
     if (!uploadedData) return;
     setLoading(true);
-    try {
-      const body: {
-        config: AnalyzerConfig;
-        data: RawDataRow[];
-        filters?: { entity_ids?: string[]; states?: string[] };
-      } = {
-        config,
-        data: uploadedData,
-      };
-      if (entityFilter.length > 0) {
-        body.filters = { ...body.filters, entity_ids: entityFilter };
+
+    setTimeout(() => {
+      try {
+        const normalized = normalizeData(uploadedData, config.columnMapping);
+        const result = computeAnalytics(
+          normalized,
+          config.stateConfig,
+          entityFilter.length > 0 ? entityFilter : undefined,
+          stateFilter.length > 0 ? stateFilter : undefined
+        );
+        setData(result);
+        setPage(0);
+      } catch (err) {
+        console.error("Failed to run custom analysis:", err);
       }
-      if (stateFilter.length > 0) {
-        body.filters = { ...body.filters, states: stateFilter };
-      }
-      const res = await fetch("/api/analytics", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      setData(json);
-      setPage(0);
-    } catch (err) {
-      console.error("Failed to run custom analysis:", err);
-    }
-    setLoading(false);
+      setLoading(false);
+    }, 0);
   }, [uploadedData, config, entityFilter, stateFilter]);
 
   const handleRegenerate = () => {
