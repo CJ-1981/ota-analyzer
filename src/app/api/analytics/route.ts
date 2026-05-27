@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateData } from "@/lib/data-generator";
 import { computeAnalytics } from "@/lib/analytics";
+import { normalizeData } from "@/lib/data-parser";
+import type { AnalyzerConfig, RawDataRow } from "@/lib/types";
+import { DEFAULT_OTA_CONFIG } from "@/lib/types";
 
-// In-memory cache for generated data
-let cachedData: ReturnType<typeof generateData> | null = null;
+// In-memory cache for generated data (as normalized entries)
+let cachedNormalized: ReturnType<typeof normalizeData> | null = null;
 let cachedSeed: number | null = null;
 
 export async function GET(request: NextRequest) {
@@ -14,13 +17,62 @@ export async function GET(request: NextRequest) {
 
   const seed = seedParam ? parseInt(seedParam, 10) : 42;
 
-  // Generate data if seed changed or not cached
-  if (!cachedData || cachedSeed !== seed) {
-    cachedData = generateData(seed);
+  // Generate and normalize data if seed changed or not cached
+  if (!cachedNormalized || cachedSeed !== seed) {
+    const rawData = generateData(seed);
+    // Convert LogEntry[] → RawDataRow[] then normalize
+    const rawRows: RawDataRow[] = rawData.map((entry) => ({
+      vehicle_id: entry.vehicle_id,
+      timestamp: entry.timestamp,
+      state: entry.state,
+      progress: entry.progress,
+      package_size_mb: entry.package_size_mb,
+      condition: entry.condition,
+    }));
+    cachedNormalized = normalizeData(rawRows, DEFAULT_OTA_CONFIG.columnMapping);
     cachedSeed = seed;
   }
 
-  const result = computeAnalytics(cachedData, vehicleIdFilter, stateFilter);
+  const result = computeAnalytics(
+    cachedNormalized,
+    DEFAULT_OTA_CONFIG.stateConfig,
+    vehicleIdFilter,
+    stateFilter
+  );
 
   return NextResponse.json(result);
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { config, data, filters } = body as {
+      config: AnalyzerConfig;
+      data: RawDataRow[];
+      filters?: { entity_id?: string; state?: string };
+    };
+
+    if (!config || !data || !Array.isArray(data)) {
+      return NextResponse.json(
+        { error: "Missing config or data in request body" },
+        { status: 400 }
+      );
+    }
+
+    const normalized = normalizeData(data, config.columnMapping);
+    const result = computeAnalytics(
+      normalized,
+      config.stateConfig,
+      filters?.entity_id,
+      filters?.state
+    );
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error processing analytics POST:", error);
+    return NextResponse.json(
+      { error: "Failed to process analytics request" },
+      { status: 500 }
+    );
+  }
 }

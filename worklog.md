@@ -9,13 +9,7 @@ Work Log:
 - Created data generator module (src/lib/data-generator.ts) - generates 3,000 VINs with ~21,000 log rows using deterministic PRNG
 - Created analytics engine (src/lib/analytics.ts) - computes attempt IDs via window function logic, wasted data estimates, chart data structures
 - Created API route (src/app/api/analytics/route.ts) - GET endpoint with seed, vehicle_id, state query params and in-memory caching
-- Built complete dashboard UI (src/app/page.tsx) with:
-  - 4 KPI cards (Total VINs, Total Retries, Success Rate, Data Wasted)
-  - Tab 1: System Analytics (State Transition Flow stacked bar chart, Pipeline Funnel, Transition Summary table)
-  - Tab 2: Operational Drilldown (Vehicle/State filter dropdowns, Retry Distribution chart, Events Over Time area chart, Paginated log table)
-  - Tab 3: Wasted Data Analysis (Progress at Failure histogram, Wasted Data by Condition horizontal bars, Progress Steps, Condition summary cards)
-  - Download HTML Report button (generates standalone HTML with all data tables)
-  - Generate New Data button (random seed regeneration)
+- Built complete dashboard UI (src/app/page.tsx) with KPI cards, 3 tabs, 6+ charts, filters, HTML report export
 - Verified: lint passes, all API endpoints return 200, filters work correctly
 
 Stage Summary:
@@ -25,3 +19,33 @@ Stage Summary:
 - Filter by vehicle ID and state with dynamic API queries
 - HTML report export functionality
 - Responsive design with dark mode support
+
+---
+Task ID: 2
+Agent: main
+Task: Add flexible config, file upload, column mapping to log analyzer
+
+Work Log:
+- Created src/lib/types.ts with AnalyzerConfig, ColumnMapping, StateConfig types and DEFAULT_OTA_CONFIG
+- Created src/lib/data-parser.ts with CSV/JSON/TSV parser, normalizeData, autoDetectColumns
+- Refactored src/lib/analytics.ts to be fully config-driven (all state checks use config.successStates, config.failureStates, etc.)
+- Updated src/app/api/analytics/route.ts with POST endpoint for custom data, fixed GET endpoint to properly normalize LogEntry → NormalizedEntry
+- Enhanced src/app/page.tsx (1856 lines) with:
+  - Collapsible configuration panel (collapsed by default)
+  - Demo/Custom mode toggle
+  - Drag-and-drop file upload zone (CSV, TSV, JSON)
+  - Column mapping UI with auto-detect
+  - TagInput component for state lists (pipeline, success, failure, retry states)
+  - Custom label inputs (Entity Label, Progress Label, Waste Label)
+  - Dynamic dashboard labels that adapt to config
+  - Analyze button for custom data, Reset to Demo button
+- Fixed GET endpoint regression: total_entities now correctly shows 3,000 with proper success rate
+- Verified: lint passes (0 errors), GET returns correct KPIs (3000 VINs, 70.2% success, 278GB waste), POST works with custom data
+
+Stage Summary:
+- Fully flexible multi-state log analyzer supporting any domain
+- CSV/JSON/TSV file upload with drag-and-drop
+- Auto-detect column mapping with manual override
+- Configurable state machine (pipeline stages, success/failure/retry states)
+- Custom display labels
+- Demo mode preserved and working

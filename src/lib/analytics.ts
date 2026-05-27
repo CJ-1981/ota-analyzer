@@ -1,12 +1,13 @@
-import { LogEntry } from "./data-generator";
+import type { NormalizedEntry, StateConfig } from "./types";
 
-export type EnrichedEntry = LogEntry & {
+export type EnrichedEntry = NormalizedEntry & {
   attempt_id: number;
   wasted_data_mb: number;
 };
 
 export type KpiMetrics = {
-  total_vins: number;
+  total_entities: number;
+  total_vins: number; // backward compat alias
   total_retries: number;
   success_rate: number;
   wasted_data_gb: number;
@@ -61,26 +62,50 @@ export type AnalyticsResult = {
   wastedByCondition: WastedByCondition[];
   timeSeries: TimeSeriesPoint[];
   filteredEntries: EnrichedEntry[];
-  uniqueVinList: string[];
+  uniqueEntityList: string[];
+  uniqueVinList: string[]; // backward compat alias
   uniqueStates: string[];
 };
 
-// Assign attempt_id: increment per vehicle, reset on RETRYING
-function enrichEntries(entries: LogEntry[]): EnrichedEntry[] {
-  const vehicleAttempts = new Map<string, number>();
+// Default config for backward compatibility with GET endpoint
+const DEFAULT_CONFIG: StateConfig = {
+  pipelineStates: [
+    "INITIATED",
+    "AUTHENTICATING",
+    "DOWNLOADING",
+    "VERIFYING",
+    "INSTALLING",
+    "COMPLETED",
+  ],
+  successStates: ["COMPLETED"],
+  failureStates: ["FAILED", "ABORTED"],
+  retryStates: ["RETRYING"],
+  entityLabel: "Vehicle",
+  progressLabel: "Progress",
+  wasteLabel: "Data Wasted",
+};
+
+// Assign attempt_id: increment per entity, reset on retry states
+function enrichEntries(
+  entries: NormalizedEntry[],
+  config: StateConfig
+): EnrichedEntry[] {
+  const retrySet = new Set(config.retryStates);
+  const failureSet = new Set(config.failureStates);
+  const entityAttempts = new Map<string, number>();
 
   return entries.map((entry) => {
-    let attempt = vehicleAttempts.get(entry.vehicle_id) ?? 1;
-    if (entry.state === "RETRYING") {
+    let attempt = entityAttempts.get(entry.entity_id) ?? 1;
+    if (retrySet.has(entry.state)) {
       attempt++;
-      vehicleAttempts.set(entry.vehicle_id, attempt);
+      entityAttempts.set(entry.entity_id, attempt);
     } else {
-      vehicleAttempts.set(entry.vehicle_id, attempt);
+      entityAttempts.set(entry.entity_id, attempt);
     }
 
-    const isFailed = entry.state === "FAILED" || entry.state === "ABORTED";
+    const isFailed = failureSet.has(entry.state);
     const wasted_data_mb = isFailed
-      ? (entry.progress / 100) * entry.package_size_mb
+      ? (entry.progress / 100) * entry.size_value
       : 0;
 
     return {
@@ -91,35 +116,36 @@ function enrichEntries(entries: LogEntry[]): EnrichedEntry[] {
   });
 }
 
-// Get per-vehicle final state
-function getVehicleFinalStates(
-  entries: LogEntry[]
+// Get per-entity final state
+function getEntityFinalStates(
+  entries: NormalizedEntry[],
+  config: StateConfig
 ): Map<string, { finalState: string; attempts: number }> {
-  const vehicleMap = new Map<
+  const retrySet = new Set(config.retryStates);
+  const entityMap = new Map<
     string,
     { finalState: string; maxAttempt: number; retryCount: number }
   >();
 
   for (const entry of entries) {
-    const existing = vehicleMap.get(entry.vehicle_id);
+    const existing = entityMap.get(entry.entity_id);
     if (!existing) {
-      vehicleMap.set(entry.vehicle_id, {
+      entityMap.set(entry.entity_id, {
         finalState: entry.state,
         maxAttempt: 1,
         retryCount: 0,
       });
     } else {
-      // Update final state (last seen wins)
       existing.finalState = entry.state;
-      if (entry.state === "RETRYING") {
+      if (retrySet.has(entry.state)) {
         existing.retryCount++;
       }
     }
   }
 
   const result = new Map<string, { finalState: string; attempts: number }>();
-  for (const [vin, data] of vehicleMap) {
-    result.set(vin, {
+  for (const [id, data] of entityMap) {
+    result.set(id, {
       finalState: data.finalState,
       attempts: data.retryCount + 1,
     });
@@ -128,37 +154,57 @@ function getVehicleFinalStates(
 }
 
 export function computeAnalytics(
-  entries: LogEntry[],
-  vehicleIdFilter?: string,
-  stateFilter?: string
+  entries: NormalizedEntry[],
+  configOrEntityId?: StateConfig | string,
+  maybeStateFilter?: string,
+  stateFilterOrUndefined?: string
 ): AnalyticsResult {
+  // Support legacy signature: (entries, vehicleIdFilter, stateFilter)
+  let config: StateConfig;
+  let entityIdFilter: string | undefined;
+  let stateFilter: string | undefined;
+
+  if (typeof configOrEntityId === "string") {
+    config = DEFAULT_CONFIG;
+    entityIdFilter = configOrEntityId;
+    stateFilter = maybeStateFilter;
+  } else {
+    config = configOrEntityId || DEFAULT_CONFIG;
+    entityIdFilter = undefined;
+    stateFilter = stateFilterOrUndefined;
+  }
+
   // Apply filters
   let filtered = entries;
-  if (vehicleIdFilter) {
-    filtered = filtered.filter((e) => e.vehicle_id === vehicleIdFilter);
+  if (entityIdFilter) {
+    filtered = filtered.filter((e) => e.entity_id === entityIdFilter);
   }
   if (stateFilter) {
     filtered = filtered.filter((e) => e.state === stateFilter);
   }
 
-  const enriched = enrichEntries(filtered);
-  const vehicleFinalStates = getVehicleFinalStates(filtered);
-  const uniqueVins = new Set(filtered.map((e) => e.vehicle_id));
+  const enriched = enrichEntries(filtered, config);
+  const entityFinalStates = getEntityFinalStates(filtered, config);
+  const uniqueEntities = new Set(filtered.map((e) => e.entity_id));
   const uniqueStates = [...new Set(entries.map((e) => e.state))].sort();
 
+  const successSet = new Set(config.successStates);
+  const failureSet = new Set(config.failureStates);
+
   // KPI Metrics
-  const totalVins = uniqueVins.size;
+  const totalEntities = uniqueEntities.size;
   let totalRetries = 0;
   let completedCount = 0;
 
-  for (const [, data] of vehicleFinalStates) {
+  for (const [, data] of entityFinalStates) {
     totalRetries += data.attempts - 1;
-    if (data.finalState === "COMPLETED") {
+    if (successSet.has(data.finalState)) {
       completedCount++;
     }
   }
 
-  const successRate = totalVins > 0 ? (completedCount / totalVins) * 100 : 0;
+  const successRate =
+    totalEntities > 0 ? (completedCount / totalEntities) * 100 : 0;
 
   const totalWastedMb = enriched.reduce(
     (sum, e) => sum + e.wasted_data_mb,
@@ -169,24 +215,27 @@ export function computeAnalytics(
   // Sankey Diagram: state-to-state transitions
   const transitionCounts = new Map<string, number>();
   const sortedEntries = [...entries].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    (a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
-  // Group entries by vehicle
-  const byVehicle = new Map<string, LogEntry[]>();
+  // Group entries by entity
+  const byEntity = new Map<string, NormalizedEntry[]>();
   for (const entry of sortedEntries) {
-    if (!vehicleIdFilter || entry.vehicle_id === vehicleIdFilter) {
-      const list = byVehicle.get(entry.vehicle_id) || [];
+    if (!entityIdFilter || entry.entity_id === entityIdFilter) {
+      const list = byEntity.get(entry.entity_id) || [];
       list.push(entry);
-      byVehicle.set(entry.vehicle_id, list);
+      byEntity.set(entry.entity_id, list);
     }
   }
 
-  for (const [, vehicleEntries] of byVehicle) {
-    // Deduplicate consecutive same-state entries, get unique state sequence
+  for (const [, entityEntries] of byEntity) {
     const stateSequence: string[] = [];
-    for (const e of vehicleEntries) {
-      if (stateSequence.length === 0 || stateSequence[stateSequence.length - 1] !== e.state) {
+    for (const e of entityEntries) {
+      if (
+        stateSequence.length === 0 ||
+        stateSequence[stateSequence.length - 1] !== e.state
+      ) {
         stateSequence.push(e.state);
       }
     }
@@ -203,20 +252,13 @@ export function computeAnalytics(
     sankeyLinks.push({ source, target, value });
   }
 
-  // Funnel: count vehicles that reached each stage
-  const stageOrder = [
-    "INITIATED",
-    "AUTHENTICATING",
-    "DOWNLOADING",
-    "VERIFYING",
-    "INSTALLING",
-    "COMPLETED",
-  ];
+  // Funnel: count entities that reached each pipeline stage
+  const stageOrder = config.pipelineStates;
   const stageReached = new Map<string, number>();
 
-  for (const [, vehicleEntries] of byVehicle) {
+  for (const [, entityEntries] of byEntity) {
     const reached = new Set<string>();
-    for (const e of vehicleEntries) {
+    for (const e of entityEntries) {
       reached.add(e.state);
     }
     for (const stage of stageOrder) {
@@ -231,7 +273,8 @@ export function computeAnalytics(
   for (const stage of stageOrder) {
     const count = stageReached.get(stage) || 0;
     const dropoff = prevCount > 0 ? prevCount - count : 0;
-    const dropoffPct = prevCount > 0 ? ((prevCount - count) / prevCount) * 100 : 0;
+    const dropoffPct =
+      prevCount > 0 ? ((prevCount - count) / prevCount) * 100 : 0;
     funnel.push({
       stage,
       count,
@@ -243,8 +286,11 @@ export function computeAnalytics(
 
   // Retry Distribution
   const attemptCounts = new Map<number, number>();
-  for (const [, data] of vehicleFinalStates) {
-    attemptCounts.set(data.attempts, (attemptCounts.get(data.attempts) || 0) + 1);
+  for (const [, data] of entityFinalStates) {
+    attemptCounts.set(
+      data.attempts,
+      (attemptCounts.get(data.attempts) || 0) + 1
+    );
   }
   const retryDistribution: RetryDistribution[] = [];
   const sortedAttempts = [...attemptCounts.keys()].sort((a, b) => a - b);
@@ -256,9 +302,7 @@ export function computeAnalytics(
   }
 
   // Failure Progress Distribution (histogram)
-  const failureEntries = enriched.filter(
-    (e) => e.state === "FAILED" || e.state === "ABORTED"
-  );
+  const failureEntries = enriched.filter((e) => failureSet.has(e.state));
   const progressBucketCounts = new Map<string, number>();
   for (let p = 0; p <= 95; p += 5) {
     const bucket = `${p}-${p + 4}%`;
@@ -315,10 +359,10 @@ export function computeAnalytics(
       successes: 0,
     };
     existing.events += 1;
-    if (e.state === "FAILED" || e.state === "ABORTED") {
+    if (failureSet.has(e.state)) {
       existing.failures += 1;
     }
-    if (e.state === "COMPLETED") {
+    if (successSet.has(e.state)) {
       existing.successes += 1;
     }
     timeSeriesMap.set(dateStr, existing);
@@ -333,9 +377,12 @@ export function computeAnalytics(
       successes: data.successes,
     }));
 
+  const entityList = [...uniqueEntities].sort();
+
   return {
     kpi: {
-      total_vins: totalVins,
+      total_entities: totalEntities,
+      total_vins: totalEntities, // backward compat
       total_retries: totalRetries,
       success_rate: Math.round(successRate * 10) / 10,
       wasted_data_gb: Math.round(wastedDataGb * 100) / 100,
@@ -347,7 +394,8 @@ export function computeAnalytics(
     wastedByCondition,
     timeSeries,
     filteredEntries: enriched,
-    uniqueVinList: [...uniqueVins].sort(),
+    uniqueEntityList: entityList,
+    uniqueVinList: entityList, // backward compat
     uniqueStates,
   };
 }
