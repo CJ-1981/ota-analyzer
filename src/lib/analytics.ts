@@ -155,32 +155,34 @@ function getEntityFinalStates(
 
 export function computeAnalytics(
   entries: NormalizedEntry[],
-  configOrEntityId?: StateConfig | string,
-  maybeStateFilter?: string,
-  stateFilterOrUndefined?: string
+  configOrEntityIds?: StateConfig | string[],
+  maybeStateFilters?: string[],
+  stateFiltersOrUndefined?: string[]
 ): AnalyticsResult {
   // Support legacy signature: (entries, vehicleIdFilter, stateFilter)
   let config: StateConfig;
-  let entityIdFilter: string | undefined;
-  let stateFilter: string | undefined;
+  let entityIdFilters: string[] | undefined;
+  let stateFilters: string[] | undefined;
 
-  if (typeof configOrEntityId === "string") {
+  if (Array.isArray(configOrEntityIds)) {
     config = DEFAULT_CONFIG;
-    entityIdFilter = configOrEntityId;
-    stateFilter = maybeStateFilter;
+    entityIdFilters = configOrEntityIds;
+    stateFilters = maybeStateFilters;
   } else {
-    config = configOrEntityId || DEFAULT_CONFIG;
-    entityIdFilter = undefined;
-    stateFilter = stateFilterOrUndefined;
+    config = configOrEntityIds || DEFAULT_CONFIG;
+    entityIdFilters = undefined;
+    stateFilters = stateFiltersOrUndefined;
   }
 
-  // Apply filters
+  // Apply filters (multi-select: include entries matching ANY selected entity or state)
   let filtered = entries;
-  if (entityIdFilter) {
-    filtered = filtered.filter((e) => e.entity_id === entityIdFilter);
+  if (entityIdFilters && entityIdFilters.length > 0) {
+    const idSet = new Set(entityIdFilters);
+    filtered = filtered.filter((e) => idSet.has(e.entity_id));
   }
-  if (stateFilter) {
-    filtered = filtered.filter((e) => e.state === stateFilter);
+  if (stateFilters && stateFilters.length > 0) {
+    const stateSet = new Set(stateFilters);
+    filtered = filtered.filter((e) => stateSet.has(e.state));
   }
 
   const enriched = enrichEntries(filtered, config);
@@ -222,7 +224,7 @@ export function computeAnalytics(
   // Group entries by entity
   const byEntity = new Map<string, NormalizedEntry[]>();
   for (const entry of sortedEntries) {
-    if (!entityIdFilter || entry.entity_id === entityIdFilter) {
+    if (!entityIdFilters || entityIdFilters.length === 0 || entityIdFilters.includes(entry.entity_id)) {
       const list = byEntity.get(entry.entity_id) || [];
       list.push(entry);
       byEntity.set(entry.entity_id, list);

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const seedParam = searchParams.get("seed");
   const vehicleIdFilter = searchParams.get("vehicle_id") || undefined;
-  const stateFilter = searchParams.get("state") || undefined;
+  const stateFilterParam = searchParams.get("state") || undefined;
 
   const seed = seedParam ? parseInt(seedParam, 10) : 42;
 
@@ -33,11 +33,15 @@ export async function GET(request: NextRequest) {
     cachedSeed = seed;
   }
 
+  // Parse comma-separated filters into arrays
+  const entityIdFilters = vehicleIdFilter ? vehicleIdFilter.split(",") : undefined;
+  const stateFilters = stateFilterParam ? stateFilterParam.split(",") : undefined;
+
   const result = computeAnalytics(
     cachedNormalized,
     DEFAULT_OTA_CONFIG.stateConfig,
-    vehicleIdFilter,
-    stateFilter
+    entityIdFilters,
+    stateFilters
   );
 
   return NextResponse.json(result);
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
     const { config, data, filters } = body as {
       config: AnalyzerConfig;
       data: RawDataRow[];
-      filters?: { entity_id?: string; state?: string };
+      filters?: { entity_ids?: string[]; states?: string[] };
     };
 
     if (!config || !data || !Array.isArray(data)) {
@@ -63,8 +67,8 @@ export async function POST(request: NextRequest) {
     const result = computeAnalytics(
       normalized,
       config.stateConfig,
-      filters?.entity_id,
-      filters?.state
+      filters?.entity_ids,
+      filters?.states
     );
 
     return NextResponse.json(result);

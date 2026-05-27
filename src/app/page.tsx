@@ -40,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -529,8 +530,8 @@ export default function Home() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [seed, setSeed] = useState(42);
-  const [entityFilter, setEntityFilter] = useState<string>("all");
-  const [stateFilter, setStateFilter] = useState<string>("all");
+  const [entityFilter, setEntityFilter] = useState<string[]>([]);
+  const [stateFilter, setStateFilter] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
@@ -575,11 +576,11 @@ export default function Home() {
     const doFetch = async () => {
       const params = new URLSearchParams();
       params.set("seed", String(seed));
-      if (entityFilter && entityFilter !== "all") {
-        params.set("vehicle_id", entityFilter);
+      if (entityFilter.length > 0) {
+        params.set("vehicle_id", entityFilter.join(","));
       }
-      if (stateFilter && stateFilter !== "all") {
-        params.set("state", stateFilter);
+      if (stateFilter.length > 0) {
+        params.set("state", stateFilter.join(","));
       }
       try {
         const res = await fetch(`/api/analytics?${params.toString()}`);
@@ -609,16 +610,16 @@ export default function Home() {
       const body: {
         config: AnalyzerConfig;
         data: RawDataRow[];
-        filters?: { entity_id?: string; state?: string };
+        filters?: { entity_ids?: string[]; states?: string[] };
       } = {
         config,
         data: uploadedData,
       };
-      if (entityFilter && entityFilter !== "all") {
-        body.filters = { ...body.filters, entity_id: entityFilter };
+      if (entityFilter.length > 0) {
+        body.filters = { ...body.filters, entity_ids: entityFilter };
       }
-      if (stateFilter && stateFilter !== "all") {
-        body.filters = { ...body.filters, state: stateFilter };
+      if (stateFilter.length > 0) {
+        body.filters = { ...body.filters, states: stateFilter };
       }
       const res = await fetch("/api/analytics", {
         method: "POST",
@@ -702,8 +703,8 @@ export default function Home() {
       stateConfig: { ...DEFAULT_OTA_CONFIG.stateConfig },
       columnMapping: { ...DEFAULT_OTA_CONFIG.columnMapping },
     });
-    setEntityFilter("all");
-    setStateFilter("all");
+    setEntityFilter([]);
+    setStateFilter([]);
     setSeed(42);
     setLoading(true);
   };
@@ -967,8 +968,8 @@ export default function Home() {
                       setMode(val);
                       if (val === "demo") {
                         setLoading(true);
-                        setEntityFilter("all");
-                        setStateFilter("all");
+                        setEntityFilter([]);
+                        setStateFilter([]);
                       }
                     }}
                     className="flex flex-row gap-4"
@@ -1341,67 +1342,36 @@ export default function Home() {
                   Filters
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Select
-                    value={entityFilter}
-                    onValueChange={(val) => {
+                  <MultiSelect
+                    options={entityOptions}
+                    selected={entityFilter}
+                    onChange={(val) => {
                       setLoading(true);
                       setEntityFilter(val);
-                      if (mode === "custom") {
-                        // Analysis will run via effect below
-                      }
                     }}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue
-                        placeholder={`All ${entityLabel}s`}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        All {entityLabel}s
-                      </SelectItem>
-                      {entityOptions.map((id) => (
-                        <SelectItem key={id} value={id}>
-                          {id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={`All ${entityLabel}s`}
+                    className="w-[240px]"
+                  />
 
-                  <Select
-                    value={stateFilter}
-                    onValueChange={(val) => {
+                  <MultiSelect
+                    options={data.uniqueStates}
+                    selected={stateFilter}
+                    onChange={(val) => {
                       setLoading(true);
                       setStateFilter(val);
-                      if (mode === "custom") {
-                        // Analysis will run via effect below
-                      }
                     }}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="All States" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All States</SelectItem>
-                      {data.uniqueStates.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="All States"
+                    className="w-[220px]"
+                  />
 
-                  {(entityFilter !== "all" || stateFilter !== "all") && (
+                  {(entityFilter.length > 0 || stateFilter.length > 0) && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
                         setLoading(true);
-                        setEntityFilter("all");
-                        setStateFilter("all");
-                        if (mode === "custom") {
-                          // Analysis will run via effect below
-                        }
+                        setEntityFilter([]);
+                        setStateFilter([]);
                       }}
                     >
                       Clear filters
@@ -1844,8 +1814,8 @@ function FilterRunner({
   stateFilter,
   runCustomAnalysis,
 }: {
-  entityFilter: string;
-  stateFilter: string;
+  entityFilter: string[];
+  stateFilter: string[];
   runCustomAnalysis: () => void;
 }) {
   useEffect(() => {
