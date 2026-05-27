@@ -143,11 +143,13 @@ function generateVehiclePath(
   return { vehicle_id: vehicleId, states };
 }
 
-export function generateData(seed: number = 42): LogEntry[] {
+export function generateData(seed: number = 42, baseSizeMB: number = 450): LogEntry[] {
   const rng = mulberry32(seed);
   const numVehicles = 3000;
   const entries: LogEntry[] = [];
   const baseTime = new Date("2025-01-15T08:00:00Z");
+  // Allow ±10% variation around the base size
+  const sizeVariance = Math.max(1, Math.round(baseSizeMB * 0.1));
 
   for (let i = 0; i < numVehicles; i++) {
     const vehicleId = `VH-${String(i).padStart(5, "0")}`;
@@ -167,7 +169,7 @@ export function generateData(seed: number = 42): LogEntry[] {
         timestamp: currentTime.toISOString(),
         state: step.state,
         progress: step.progress,
-        package_size_mb: 450 + Math.floor(rng() * 20 - 10),
+        package_size_mb: baseSizeMB + Math.floor(rng() * (2 * sizeVariance) - sizeVariance),
         condition: step.condition,
       });
     }

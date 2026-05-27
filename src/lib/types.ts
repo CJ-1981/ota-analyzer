@@ -20,6 +20,7 @@ export type StateConfig = {
 export type AnalyzerConfig = {
   columnMapping: ColumnMapping;
   stateConfig: StateConfig;
+  dataSizeMB?: number;
 };
 
 export type RawDataRow = Record<string, unknown>;

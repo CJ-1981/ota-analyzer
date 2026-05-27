@@ -543,6 +543,7 @@ export default function Home() {
     stateConfig: { ...DEFAULT_OTA_CONFIG.stateConfig },
     columnMapping: { ...DEFAULT_OTA_CONFIG.columnMapping },
   });
+  const [dataSizeMB, setDataSizeMB] = useState<number>(450);
   const [uploadedData, setUploadedData] = useState<RawDataRow[] | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
@@ -576,6 +577,7 @@ export default function Home() {
     const doFetch = async () => {
       const params = new URLSearchParams();
       params.set("seed", String(seed));
+      params.set("data_size_mb", String(dataSizeMB));
       if (entityFilter.length > 0) {
         params.set("vehicle_id", entityFilter.join(","));
       }
@@ -600,7 +602,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [seed, entityFilter, stateFilter, mode]);
+  }, [seed, entityFilter, stateFilter, mode, dataSizeMB]);
 
   // Fetch custom data
   const runCustomAnalysis = useCallback(async () => {
@@ -987,6 +989,30 @@ export default function Home() {
                       </Label>
                     </div>
                   </RadioGroup>
+
+                  {mode === "demo" && (
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1 max-w-[200px] space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          OTA Package Size (MB)
+                        </Label>
+                        <Input
+                          type="number"
+                          value={dataSizeMB}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val) && val > 0) setDataSizeMB(val);
+                          }}
+                          className="h-8 text-xs"
+                          min={1}
+                          step={10}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pb-2">
+                        Simulate different OTA package sizes — affects bandwidth &amp; waste metrics
+                      </p>
+                    </div>
+                  )}
 
                   {mode === "custom" && (
                     <div className="space-y-3">

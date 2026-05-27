@@ -8,6 +8,7 @@ import { DEFAULT_OTA_CONFIG } from "@/lib/types";
 // In-memory cache for generated data (as normalized entries)
 let cachedNormalized: ReturnType<typeof normalizeData> | null = null;
 let cachedSeed: number | null = null;
+let cachedDataSizeMB: number = 450;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -16,10 +17,12 @@ export async function GET(request: NextRequest) {
   const stateFilterParam = searchParams.get("state") || undefined;
 
   const seed = seedParam ? parseInt(seedParam, 10) : 42;
+  const dataSizeParam = searchParams.get("data_size_mb");
+  const dataSizeMB = dataSizeParam ? parseFloat(dataSizeParam) : 450;
 
-  // Generate and normalize data if seed changed or not cached
-  if (!cachedNormalized || cachedSeed !== seed) {
-    const rawData = generateData(seed);
+  // Generate and normalize data if seed or data size changed or not cached
+  if (!cachedNormalized || cachedSeed !== seed || cachedDataSizeMB !== dataSizeMB) {
+    const rawData = generateData(seed, dataSizeMB);
     // Convert LogEntry[] → RawDataRow[] then normalize
     const rawRows: RawDataRow[] = rawData.map((entry) => ({
       vehicle_id: entry.vehicle_id,
@@ -31,6 +34,7 @@ export async function GET(request: NextRequest) {
     }));
     cachedNormalized = normalizeData(rawRows, DEFAULT_OTA_CONFIG.columnMapping);
     cachedSeed = seed;
+    cachedDataSizeMB = dataSizeMB;
   }
 
   // Parse comma-separated filters into arrays
