@@ -21,6 +21,7 @@ import {
   Plus,
   ArrowUp,
   ArrowDown,
+  ArrowUpDown,
   Play,
   Sparkles,
 } from "lucide-react";
@@ -535,6 +536,36 @@ export default function Home() {
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
+  // Table column sort & filter
+  type SortKey = "entity_id" | "timestamp" | "state" | "progress" | "attempt_id" | "condition";
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [colFilters, setColFilters] = useState<Record<SortKey, string>>({
+    entity_id: "",
+    timestamp: "",
+    state: "",
+    progress: "",
+    attempt_id: "",
+    condition: "",
+  });
+
+  const handleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return key;
+      }
+      setSortDir("asc");
+      return key;
+    });
+    setPage(0);
+  }, []);
+
+  const handleColFilter = useCallback((key: SortKey, value: string) => {
+    setColFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(0);
+  }, []);
+
   // Config mode
   const [mode, setMode] = useState<"demo" | "custom">("demo");
   const [configOpen, setConfigOpen] = useState(false);
@@ -723,15 +754,46 @@ export default function Home() {
   };
 
   // Paginated entries
-  const paginatedEntries = useMemo(() => {
+  // Table entries: filtered by column text, sorted, then paginated
+  const tableFilteredEntries = useMemo(() => {
     if (!data) return [];
-    const start = page * pageSize;
-    return data.filteredEntries.slice(start, start + pageSize);
-  }, [data, page]);
+    let entries = data.filteredEntries;
+    // Apply per-column text filters
+    for (const [key, filterText] of Object.entries(colFilters)) {
+      const trimmed = filterText.trim().toLowerCase();
+      if (!trimmed) continue;
+      entries = entries.filter((entry) => {
+        const val = String(entry[key as keyof typeof entry] ?? "").toLowerCase();
+        return val.includes(trimmed);
+      });
+    }
+    return entries;
+  }, [data, colFilters]);
 
-  const totalPages = data
-    ? Math.ceil(data.filteredEntries.length / pageSize)
-    : 0;
+  const tableSortedEntries = useMemo(() => {
+    if (!tableFilteredEntries.length) return tableFilteredEntries;
+    if (!sortKey) return tableFilteredEntries;
+    const sorted = [...tableFilteredEntries];
+    const dir = sortDir === "asc" ? 1 : -1;
+    sorted.sort((a, b) => {
+      const va = a[sortKey];
+      const vb = b[sortKey];
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1 * dir;
+      if (vb == null) return -1 * dir;
+      if (typeof va === "number" && typeof vb === "number")
+        return (va - vb) * dir;
+      return String(va).localeCompare(String(vb)) * dir;
+    });
+    return sorted;
+  }, [tableFilteredEntries, sortKey, sortDir]);
+
+  const tableTotalPages = Math.ceil(tableSortedEntries.length / pageSize) || 0;
+
+  const paginatedEntries = useMemo(() => {
+    const start = page * pageSize;
+    return tableSortedEntries.slice(start, start + pageSize);
+  }, [tableSortedEntries, page]);
 
   // Retry bar chart colors
   const retryColors = [
@@ -1539,69 +1601,161 @@ export default function Home() {
                     <div>
                       <CardTitle className="text-base">Log Entries</CardTitle>
                       <CardDescription>
-                        Page {page + 1} of {totalPages} (
-                        {data.filteredEntries.length.toLocaleString()} total)
+                        Page {tableTotalPages > 0 ? page + 1 : 0} of {tableTotalPages} (
+                        {tableSortedEntries.length.toLocaleString()} shown
+                        {tableSortedEntries.length !== data.filteredEntries.length
+                          ? ` of ${data.filteredEntries.length.toLocaleString()}`
+                          : ""}
+                        )
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-[32rem] overflow-y-auto">
                     <Table>
                       <TableHeader>
+                        {/* Sortable column headers */}
                         <TableRow>
-                          <TableHead>{entityLabel} ID</TableHead>
-                          <TableHead>Timestamp</TableHead>
-                          <TableHead>State</TableHead>
-                          <TableHead className="text-right">
-                            {progressLabel}
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("entity_id")}>
+                            <span className="inline-flex items-center gap-1">
+                              {entityLabel} ID
+                              {sortKey === "entity_id" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                            </span>
                           </TableHead>
-                          <TableHead className="text-right">Attempt</TableHead>
-                          <TableHead>Condition</TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("timestamp")}>
+                            <span className="inline-flex items-center gap-1">
+                              Timestamp
+                              {sortKey === "timestamp" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                            </span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("state")}>
+                            <span className="inline-flex items-center gap-1">
+                              State
+                              {sortKey === "state" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                            </span>
+                          </TableHead>
+                          <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("progress")}>
+                            <span className="inline-flex items-center gap-1 justify-end">
+                              {progressLabel}
+                              {sortKey === "progress" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                            </span>
+                          </TableHead>
+                          <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("attempt_id")}>
+                            <span className="inline-flex items-center gap-1 justify-end">
+                              Attempt
+                              {sortKey === "attempt_id" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                            </span>
+                          </TableHead>
+                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("condition")}>
+                            <span className="inline-flex items-center gap-1">
+                              Condition
+                              {sortKey === "condition" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                            </span>
+                          </TableHead>
+                        </TableRow>
+                        {/* Filter row */}
+                        <TableRow>
+                          <TableHead className="p-1">
+                            <Input
+                              placeholder={`Search ${entityLabel.toLowerCase()}…`}
+                              value={colFilters.entity_id}
+                              onChange={(e) => handleColFilter("entity_id", e.target.value)}
+                              className="h-7 text-xs"
+                            />
+                          </TableHead>
+                          <TableHead className="p-1">
+                            <Input
+                              placeholder="Search time…"
+                              value={colFilters.timestamp}
+                              onChange={(e) => handleColFilter("timestamp", e.target.value)}
+                              className="h-7 text-xs"
+                            />
+                          </TableHead>
+                          <TableHead className="p-1">
+                            <Input
+                              placeholder="Search state…"
+                              value={colFilters.state}
+                              onChange={(e) => handleColFilter("state", e.target.value)}
+                              className="h-7 text-xs"
+                            />
+                          </TableHead>
+                          <TableHead className="p-1">
+                            <Input
+                              placeholder="Search…"
+                              value={colFilters.progress}
+                              onChange={(e) => handleColFilter("progress", e.target.value)}
+                              className="h-7 text-xs ml-auto w-20"
+                            />
+                          </TableHead>
+                          <TableHead className="p-1">
+                            <Input
+                              placeholder="Search…"
+                              value={colFilters.attempt_id}
+                              onChange={(e) => handleColFilter("attempt_id", e.target.value)}
+                              className="h-7 text-xs ml-auto w-20"
+                            />
+                          </TableHead>
+                          <TableHead className="p-1">
+                            <Input
+                              placeholder="Search…"
+                              value={colFilters.condition}
+                              onChange={(e) => handleColFilter("condition", e.target.value)}
+                              className="h-7 text-xs"
+                            />
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedEntries.map((entry, idx) => {
-                          const eid =
-                            entry.entity_id || entry.vehicle_id || "—";
-                          return (
-                            <TableRow
-                              key={`${eid}-${entry.timestamp}-${idx}`}
-                            >
-                              <TableCell className="font-mono text-xs">
-                                {eid}
-                              </TableCell>
-                              <TableCell className="text-xs text-muted-foreground">
-                                {new Date(
-                                  entry.timestamp
-                                ).toLocaleString()}
-                              </TableCell>
-                              <TableCell>
-                                <StateBadge state={entry.state} />
-                              </TableCell>
-                              <TableCell className="text-right font-mono">
-                                {entry.progress}%
-                              </TableCell>
-                              <TableCell className="text-right font-mono">
-                                {entry.attempt_id}
-                              </TableCell>
-                              <TableCell>
-                                {entry.condition ? (
-                                  <Badge
-                                    variant="destructive"
-                                    className="text-xs"
-                                  >
-                                    {entry.condition}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    —
-                                  </span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
+                        {paginatedEntries.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
+                              No entries match the current filters.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          paginatedEntries.map((entry, idx) => {
+                            const eid =
+                              entry.entity_id || entry.vehicle_id || "—";
+                            return (
+                              <TableRow
+                                key={`${eid}-${entry.timestamp}-${idx}`}
+                              >
+                                <TableCell className="font-mono text-xs">
+                                  {eid}
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">
+                                  {new Date(
+                                    entry.timestamp
+                                  ).toLocaleString()}
+                                </TableCell>
+                                <TableCell>
+                                  <StateBadge state={entry.state} />
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {entry.progress}%
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {entry.attempt_id}
+                                </TableCell>
+                                <TableCell>
+                                  {entry.condition ? (
+                                    <Badge
+                                      variant="destructive"
+                                      className="text-xs"
+                                    >
+                                      {entry.condition}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      —
+                                    </span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -1609,13 +1763,13 @@ export default function Home() {
                   {/* Pagination */}
                   <div className="flex items-center justify-between pt-4">
                     <p className="text-xs text-muted-foreground">
-                      Showing {page * pageSize + 1}–
+                      Showing {tableSortedEntries.length > 0 ? page * pageSize + 1 : 0}–
                       {Math.min(
                         (page + 1) * pageSize,
-                        data.filteredEntries.length
+                        tableSortedEntries.length
                       )}{" "}
                       of{" "}
-                      {data.filteredEntries.length.toLocaleString()}
+                      {tableSortedEntries.length.toLocaleString()}
                     </p>
                     <div className="flex gap-1">
                       <Button
@@ -1629,7 +1783,7 @@ export default function Home() {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={page >= totalPages - 1}
+                        disabled={page >= tableTotalPages - 1}
                         onClick={() => setPage(page + 1)}
                       >
                         Next
