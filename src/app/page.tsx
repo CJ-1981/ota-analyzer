@@ -602,26 +602,55 @@ export default function Home() {
     return ordered;
   }, [data, config.stateConfig.pipelineStates]);
 
-  // Generate demo data & compute analytics (client-side)
+  // Cache normalized entries for demo mode (so filters don't re-fetch)
+  const [cachedNormalized, setCachedNormalized] = useState<ReturnType<typeof normalizeData> | null>(null);
+
+  // Load demo data from static JSON, compute analytics client-side
   useEffect(() => {
     if (mode !== "demo") return;
     setLoading(true);
 
-    // Use setTimeout to avoid blocking UI during generation
+    let cancelled = false;
+
+    const loadDemo = async () => {
+      try {
+        const res = await fetch("/sample-logs.json");
+        const json = await res.json();
+        if (cancelled) return;
+
+        // Parse compact format: { h: headers, d: rows }
+        const headers = json.h as string[];
+        const rows = json.d as unknown[][];
+        const rawRows: RawDataRow[] = rows.map((row) => {
+          const obj: RawDataRow = {};
+          headers.forEach((h, i) => { obj[h] = row[i]; });
+          return obj;
+        });
+
+        const normalized = normalizeData(rawRows, DEFAULT_OTA_CONFIG.columnMapping);
+        if (!cancelled) {
+          setCachedNormalized(normalized);
+        }
+      } catch (err) {
+        console.error("Failed to load demo data:", err);
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadDemo();
+
+    return () => { cancelled = true; };
+  }, [mode]); // Only re-fetch when mode changes, not when filters change
+
+  // Recompute analytics from cached normalized data when filters change
+  useEffect(() => {
+    if (mode !== "demo" || !cachedNormalized) return;
+    setLoading(true);
+
     const timer = setTimeout(() => {
       try {
-        const rawData = generateData(seed, dataSizeMB);
-        const rawRows: RawDataRow[] = rawData.map((entry) => ({
-          vehicle_id: entry.vehicle_id,
-          timestamp: entry.timestamp,
-          state: entry.state,
-          progress: entry.progress,
-          package_size_mb: entry.package_size_mb,
-          condition: entry.condition,
-        }));
-        const normalized = normalizeData(rawRows, DEFAULT_OTA_CONFIG.columnMapping);
         const result = computeAnalytics(
-          normalized,
+          cachedNormalized,
           DEFAULT_OTA_CONFIG.stateConfig,
           entityFilter.length > 0 ? entityFilter : undefined,
           stateFilter.length > 0 ? stateFilter : undefined
@@ -629,13 +658,13 @@ export default function Home() {
         setData(result);
         setPage(0);
       } catch (err) {
-        console.error("Failed to generate demo analytics:", err);
+        console.error("Failed to compute analytics:", err);
       }
       setLoading(false);
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [seed, entityFilter, stateFilter, mode, dataSizeMB]);
+  }, [mode, cachedNormalized, entityFilter, stateFilter]);
 
   // Run custom analysis (client-side)
   const runCustomAnalysis = useCallback(() => {
@@ -661,8 +690,11 @@ export default function Home() {
   }, [uploadedData, config, entityFilter, stateFilter]);
 
   const handleRegenerate = () => {
-    const newSeed = Math.floor(Math.random() * 100000);
-    setSeed(newSeed);
+    // Reset filters and reload the static sample data
+    setEntityFilter([]);
+    setStateFilter([]);
+    setCachedNormalized(null);
+    setMode("demo");
     setLoading(true);
   };
 
