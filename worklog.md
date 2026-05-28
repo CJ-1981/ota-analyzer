@@ -49,3 +49,30 @@ Stage Summary:
 - Configurable state machine (pipeline stages, success/failure/retry states)
 - Custom display labels
 - Demo mode preserved and working
+
+---
+Task ID: 3
+Agent: main
+Task: Refactor monolithic page.tsx (1958 lines) into well-organized component files and remove duplicated types
+
+Work Log:
+- Created `src/lib/chart-helpers.ts` — extracted STATE_COLORS, CHART_PALETTE, getStateColor(), getStateBadgeClass(), TOOLTIP_CONTENT_STYLE
+- Created `src/components/StateBadge.tsx` — StateBadge component using getStateBadgeClass from chart-helpers
+- Created `src/components/TagInput.tsx` — TagInput component with reorderable tag list, uses lucide-react icons + Input + Button
+- Created `src/components/FlowDiagram.tsx` — Sankey-like flow diagram using recharts, imports SankeyLink from analytics.ts
+- Created `src/components/FunnelChart.tsx` — Pipeline funnel chart, imports FunnelStage from analytics.ts, CHART_PALETTE from chart-helpers
+- Created `src/components/ColumnMappingSelector.tsx` — Column mapping UI, imports ColumnMapping from types.ts
+- Created `src/components/DataTable.tsx` — Full data table with sortable headers, per-column text/multi-select filters, pagination; includes SortIcon helper; imports SortKey type locally, uses AnalyticsResult/EnrichedEntry from analytics.ts
+- Created `src/components/FilterRunner.tsx` — useEffect-based auto-run component for custom mode filter changes
+- Updated `src/app/page.tsx` — replaced 1958 lines with 1225 lines by importing all extracted components
+- Updated `src/lib/report-generator.ts` — removed duplicated local types (EnrichedEntry, FunnelStage, etc.), now imports AnalyticsResult from analytics.ts; changed entity ID access to always use entity_id (no vehicle_id fallback needed)
+- Removed all duplicated type definitions from page.tsx: EnrichedEntry, SankeyLink, FunnelStage, RetryDistribution, FailureProgressBucket, WastedByCondition, TimeSeriesPoint, AnalyticsData — all replaced with imports from @/lib/analytics (AnalyticsResult)
+- TypeScript strict mode compilation: 0 errors in our source files (only pre-existing errors in ui/ components, examples/, skills/)
+- ESLint: 0 new errors (only pre-existing warnings)
+
+Stage Summary:
+- page.tsx reduced from 1958 → 1225 lines (37% reduction)
+- 8 new files created (1 lib + 7 components)
+- 1 file updated (report-generator.ts — removed duplicate types)
+- All duplicated types eliminated; single source of truth in @/lib/analytics.ts
+- Clean separation of concerns: helpers, presentational components, complex interactive components

@@ -15,11 +15,6 @@ import {
   Upload,
   FileSpreadsheet,
   Settings,
-  X,
-  Plus,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
   Play,
   Sparkles,
 } from "lucide-react";
@@ -32,13 +27,6 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -80,478 +68,24 @@ import type {
 import { DEFAULT_OTA_CONFIG } from "@/lib/types";
 import { parseFile, autoDetectColumns, normalizeData } from "@/lib/data-parser";
 import { computeAnalytics } from "@/lib/analytics";
+import type { AnalyticsResult } from "@/lib/analytics";
 import { generateReportHtml } from "@/lib/report-generator";
+import { TOOLTIP_CONTENT_STYLE } from "@/lib/chart-helpers";
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-type SortKey = "entity_id" | "timestamp" | "state" | "progress" | "attempt_id" | "condition";
-
-type EnrichedEntry = {
-  entity_id: string;
-  vehicle_id: string;
-  timestamp: string;
-  state: string;
-  progress: number;
-  size_value: number;
-  package_size_mb: number;
-  condition: string | null;
-  attempt_id: number;
-  wasted_data_mb: number;
-};
-
-type SankeyLink = { source: string; target: string; value: number };
-type FunnelStage = { stage: string; count: number; dropoff: number; dropoff_pct: number };
-type RetryDistribution = { attempts: number; count: number };
-type FailureProgressBucket = { range: string; count: number };
-type WastedByCondition = { condition: string; wasted_gb: number; count: number };
-type TimeSeriesPoint = { date: string; events: number; failures: number; successes: number };
-
-type AnalyticsData = {
-  kpi: {
-    total_entities: number;
-    total_vins: number;
-    total_retries: number;
-    success_rate: number;
-    wasted_data_gb: number;
-  };
-  sankey: { links: SankeyLink[] };
-  funnel: FunnelStage[];
-  retryDistribution: RetryDistribution[];
-  failureProgressBuckets: FailureProgressBucket[];
-  wastedByCondition: WastedByCondition[];
-  timeSeries: TimeSeriesPoint[];
-  filteredEntries: EnrichedEntry[];
-  uniqueEntityList: string[];
-  uniqueVinList: string[];
-  uniqueStates: string[];
-};
-
-/* ------------------------------------------------------------------ */
-/*  Tooltip dark-mode compatible style                                 */
-/* ------------------------------------------------------------------ */
-const TOOLTIP_CONTENT_STYLE = {
-  borderRadius: "8px",
-  border: "1px solid var(--border, #e5e7eb)",
-  background: "var(--popover, #ffffff)",
-  color: "var(--popover-foreground, #1a1a1a)",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-};
-
-/* ------------------------------------------------------------------ */
-/*  Color helpers                                                      */
-/* ------------------------------------------------------------------ */
-const STATE_COLORS: Record<string, string> = {
-  INITIATED: "#6366f1",
-  AUTHENTICATING: "#8b5cf6",
-  DOWNLOADING: "#3b82f6",
-  VERIFYING: "#06b6d4",
-  INSTALLING: "#f59e0b",
-  COMPLETED: "#10b981",
-  FAILED: "#ef4444",
-  RETRYING: "#f97316",
-  ABORTED: "#ec4899",
-};
-
-const CHART_PALETTE = [
-  "#6366f1",
-  "#8b5cf6",
-  "#3b82f6",
-  "#06b6d4",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#f97316",
-  "#ec4899",
-  "#14b8a6",
-  "#a855f7",
-  "#eab308",
-];
-
-function getStateColor(state: string): string {
-  if (STATE_COLORS[state]) return STATE_COLORS[state];
-  const colors = [
-    "#6366f1", "#8b5cf6", "#3b82f6", "#06b6d4", "#f59e0b",
-    "#10b981", "#ef4444", "#f97316", "#ec4899", "#14b8a6",
-    "#a855f7", "#eab308",
-  ];
-  let hash = 0;
-  for (let i = 0; i < state.length; i++)
-    hash = state.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
-
-function getStateBadgeClass(state: string): string {
-  const map: Record<string, string> = {
-    INITIATED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
-    AUTHENTICATING: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
-    DOWNLOADING: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-    VERIFYING: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
-    INSTALLING: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-    COMPLETED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    FAILED: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
-    RETRYING: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-    ABORTED: "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
-  };
-  if (map[state]) return map[state];
-  const classes = [
-    "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
-    "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
-    "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-    "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
-    "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-    "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
-    "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-    "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
-    "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
-  ];
-  let hash = 0;
-  for (let i = 0; i < state.length; i++)
-    hash = state.charCodeAt(i) + ((hash << 5) - hash);
-  return classes[Math.abs(hash) % classes.length];
-}
-
-/* ------------------------------------------------------------------ */
-/*  State badge component                                               */
-/* ------------------------------------------------------------------ */
-function StateBadge({ state }: { state: string }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${getStateBadgeClass(state)}`}
-    >
-      {state}
-    </span>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Tag Input Component (for state lists)                              */
-/* ------------------------------------------------------------------ */
-function TagInput({
-  values,
-  onChange,
-  placeholder,
-  reorderable,
-}: {
-  values: string[];
-  onChange: (v: string[]) => void;
-  placeholder: string;
-  reorderable?: boolean;
-}) {
-  const [inputVal, setInputVal] = useState("");
-
-  const addTag = () => {
-    const trimmed = inputVal.trim().toUpperCase();
-    if (trimmed && !values.includes(trimmed)) {
-      onChange([...values, trimmed]);
-    }
-    setInputVal("");
-  };
-
-  const removeTag = (idx: number) => {
-    onChange(values.filter((_, i) => i !== idx));
-  };
-
-  const moveTag = (idx: number, dir: -1 | 1) => {
-    const next = idx + dir;
-    if (next < 0 || next >= values.length) return;
-    const arr = [...values];
-    [arr[idx], arr[next]] = [arr[next], arr[idx]];
-    onChange(arr);
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {values.map((v, idx) => (
-          <span
-            key={v}
-            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${getStateBadgeClass(v)}`}
-          >
-            {reorderable && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => moveTag(idx, -1)}
-                  className="hover:bg-black/10 rounded p-0.5"
-                  disabled={idx === 0}
-                  aria-label="Move up"
-                >
-                  <ArrowUp className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveTag(idx, 1)}
-                  className="hover:bg-black/10 rounded p-0.5"
-                  disabled={idx === values.length - 1}
-                  aria-label="Move down"
-                >
-                  <ArrowDown className="h-3 w-3" />
-                </button>
-              </>
-            )}
-            {v}
-            <button
-              type="button"
-              onClick={() => removeTag(idx)}
-              className="hover:bg-black/10 rounded p-0.5 ml-0.5"
-              aria-label={`Remove ${v}`}
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </span>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Input
-          value={inputVal}
-          onChange={(e) => setInputVal(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addTag();
-            }
-          }}
-          placeholder={placeholder}
-          className="h-8 text-xs"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addTag}
-          className="h-8 px-2"
-        >
-          <Plus className="h-3 w-3" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Sankey-like Flow Diagram                                           */
-/* ------------------------------------------------------------------ */
-function FlowDiagram({
-  links,
-  stateOrder,
-  entityLabel,
-}: {
-  links: SankeyLink[];
-  stateOrder: string[];
-  entityLabel: string;
-}) {
-  const sourceMap = new Map<string, Map<string, number>>();
-  const validSources = new Set(stateOrder);
-
-  for (const link of links) {
-    if (!validSources.has(link.source)) continue;
-    if (!sourceMap.has(link.source))
-      sourceMap.set(link.source, new Map());
-    const targets = sourceMap.get(link.source)!;
-    targets.set(link.target, (targets.get(link.target) || 0) + link.value);
-  }
-
-  const chartData = stateOrder
-    .filter((s) => sourceMap.has(s))
-    .map((source) => {
-      const targets = sourceMap.get(source)!;
-      const item: Record<string, string | number> = { source };
-      for (const [target, value] of targets) {
-        item[target] = value;
-      }
-      return item;
-    });
-
-  const allTargets = new Set<string>();
-  for (const link of links) {
-    if (validSources.has(link.source)) allTargets.add(link.target);
-  }
-  const targetList = [...allTargets].sort(
-    (a, b) => stateOrder.indexOf(a) - stateOrder.indexOf(b)
-  );
-
-  return (
-    <Card className="p-4 gap-4">
-      <CardHeader className="p-0 pb-2">
-        <CardTitle className="text-base">State Transition Flow</CardTitle>
-        <CardDescription>
-          Horizontal stacked view of state-to-state transitions
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ left: 20, right: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" />
-            <YAxis
-              dataKey="source"
-              type="category"
-              width={110}
-              tick={{ fontSize: 11 }}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_CONTENT_STYLE}
-              formatter={(value: number, name: string) => [
-                `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
-                `→ ${name}`,
-              ]}
-            />
-            <Legend />
-            {targetList.map((target) => (
-              <Bar
-                key={target}
-                dataKey={target}
-                stackId="a"
-                fill={getStateColor(target)}
-                name={target}
-              />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Funnel Chart                                                       */
-/* ------------------------------------------------------------------ */
-function FunnelChart({
-  data,
-  entityLabel,
-}: {
-  data: FunnelStage[];
-  entityLabel: string;
-}) {
-  const maxCount = Math.max(...data.map((d) => d.count), 1);
-
-  const chartData = data.map((d) => ({
-    ...d,
-    width_pct: ((d.count / maxCount) * 100).toFixed(1),
-  }));
-
-  return (
-    <Card className="p-4 gap-4">
-      <CardHeader className="p-0 pb-2">
-        <CardTitle className="text-base">Pipeline Funnel</CardTitle>
-        <CardDescription>
-          {entityLabel} progression through stages
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="space-y-2">
-          {chartData.map((item, idx) => (
-            <div key={item.stage} className="flex items-center gap-3">
-              <span className="text-xs font-medium text-muted-foreground w-28 text-right shrink-0 truncate">
-                {item.stage}
-              </span>
-              <div className="flex-1">
-                <div
-                  className="h-8 rounded-md flex items-center justify-end px-2 transition-all"
-                  style={{
-                    width: `${Math.max(Number(item.width_pct), 8)}%`,
-                    backgroundColor: CHART_PALETTE[idx] || "#888",
-                    opacity: 0.85,
-                  }}
-                >
-                  <span className="text-xs font-semibold text-white">
-                    {item.count.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              {item.dropoff > 0 && (
-                <span className="text-xs text-rose-500 shrink-0 w-20 text-right">
-                  -{item.dropoff.toLocaleString()} ({item.dropoff_pct}%)
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Column Mapping Selector                                            */
-/* ------------------------------------------------------------------ */
-function ColumnMappingSelector({
-  columns,
-  mapping,
-  onChange,
-}: {
-  columns: string[];
-  mapping: ColumnMapping;
-  onChange: (m: ColumnMapping) => void;
-}) {
-  const colOptions = [
-    { label: "Entity ID Column", key: "entityId" as const, optional: false },
-    { label: "Timestamp Column", key: "timestamp" as const, optional: false },
-    { label: "State Column", key: "state" as const, optional: false },
-    { label: "Progress Column", key: "progress" as const, optional: true },
-    { label: "Size Column", key: "sizeField" as const, optional: true },
-    { label: "Condition Column", key: "condition" as const, optional: true },
-  ];
-
-  const set = (key: keyof ColumnMapping, val: string) => {
-    onChange({ ...mapping, [key]: val === "__none__" ? undefined : val });
-  };
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {colOptions.map((opt) => (
-        <div key={opt.key} className="space-y-1">
-          <Label className="text-xs text-muted-foreground">
-            {opt.label}
-            {opt.optional && (
-              <span className="text-muted-foreground/60 ml-1">(optional)</span>
-            )}
-          </Label>
-          <Select
-            value={mapping[opt.key] || "__none__"}
-            onValueChange={(v) => set(opt.key, v)}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">— not mapped —</SelectItem>
-              {columns.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Sort Icon Helper                                                  */
-/* ------------------------------------------------------------------ */
-function SortIcon({ column, sortKey, sortDir }: { column: SortKey; sortKey: SortKey | null; sortDir: "asc" | "desc" }) {
-  if (sortKey === column) {
-    return sortDir === "asc"
-      ? <ArrowUp className="h-3 w-3" />
-      : <ArrowDown className="h-3 w-3" />;
-  }
-  return <ArrowUpDown className="h-3 w-3 opacity-30" />;
-}
+import { StateBadge } from "@/components/StateBadge";
+import { TagInput } from "@/components/TagInput";
+import { FlowDiagram } from "@/components/FlowDiagram";
+import { FunnelChart } from "@/components/FunnelChart";
+import { ColumnMappingSelector } from "@/components/ColumnMappingSelector";
+import { DataTable } from "@/components/DataTable";
+import type { SortKey } from "@/components/DataTable";
+import { FilterRunner } from "@/components/FilterRunner";
 
 /* ------------------------------------------------------------------ */
 /*  Main Dashboard                                                     */
 /* ------------------------------------------------------------------ */
 export default function Home() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [data, setData] = useState<AnalyticsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [computing, setComputing] = useState(false);
   const [entityFilter, setEntityFilter] = useState<string[]>([]);
@@ -820,57 +354,6 @@ export default function Home() {
     return data.wastedByCondition.map((w) => w.condition);
   }, [data]);
 
-  // Table entries: filtered by column text/multi-select, sorted, then paginated
-  const tableFilteredEntries = useMemo(() => {
-    if (!data) return [];
-    let entries = data.filteredEntries;
-    // Apply per-column text filters
-    for (const [key, filterText] of Object.entries(colTextFilters)) {
-      const trimmed = filterText.trim().toLowerCase();
-      if (!trimmed) continue;
-      entries = entries.filter((entry) => {
-        const val = String(entry[key as keyof typeof entry] ?? "").toLowerCase();
-        return val.includes(trimmed);
-      });
-    }
-    // Multi-select state filter
-    if (colStateFilter.length > 0) {
-      const stateSet = new Set(colStateFilter);
-      entries = entries.filter((entry) => stateSet.has(entry.state));
-    }
-    // Multi-select condition filter
-    if (colConditionFilter.length > 0) {
-      const condSet = new Set(colConditionFilter);
-      entries = entries.filter((entry) => entry.condition !== null && entry.condition !== undefined && condSet.has(entry.condition));
-    }
-    return entries;
-  }, [data, colTextFilters, colStateFilter, colConditionFilter]);
-
-  const tableSortedEntries = useMemo(() => {
-    if (!tableFilteredEntries.length) return tableFilteredEntries;
-    if (!sortKey) return tableFilteredEntries;
-    const sorted = [...tableFilteredEntries];
-    const dir = sortDir === "asc" ? 1 : -1;
-    sorted.sort((a, b) => {
-      const va = a[sortKey];
-      const vb = b[sortKey];
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1 * dir;
-      if (vb == null) return -1 * dir;
-      if (typeof va === "number" && typeof vb === "number")
-        return (va - vb) * dir;
-      return String(va).localeCompare(String(vb)) * dir;
-    });
-    return sorted;
-  }, [tableFilteredEntries, sortKey, sortDir]);
-
-  const tableTotalPages = Math.ceil(tableSortedEntries.length / pageSize) || 0;
-
-  const paginatedEntries = useMemo(() => {
-    const start = page * pageSize;
-    return tableSortedEntries.slice(start, start + pageSize);
-  }, [tableSortedEntries, page]);
-
   // Retry bar chart colors
   const retryColors = [
     "#10b981",
@@ -892,7 +375,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `analytics-report-42.html`;
+    a.download = `analytics-report-${new Date().toISOString().slice(0, 10)}.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -1526,235 +1009,37 @@ export default function Home() {
               </div>
 
               {/* Data Table */}
-              <Card className="p-4 gap-4">
-                <CardHeader className="p-0 pb-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base">Log Entries</CardTitle>
-                      <CardDescription>
-                        Page {tableTotalPages > 0 ? page + 1 : 0} of {tableTotalPages} (
-                        {tableSortedEntries.length.toLocaleString()} shown
-                        {tableSortedEntries.length !== data.filteredEntries.length
-                          ? ` of ${data.filteredEntries.length.toLocaleString()}`
-                          : ""}
-                        )
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="max-h-[32rem] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        {/* Sortable column headers */}
-                        <TableRow>
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("entity_id")}
-                            aria-sort={sortKey === "entity_id" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                          >
-                            <span className="inline-flex items-center gap-1">
-                              {entityLabel} ID
-                              <SortIcon column="entity_id" sortKey={sortKey} sortDir={sortDir} />
-                            </span>
-                          </TableHead>
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("timestamp")}
-                            aria-sort={sortKey === "timestamp" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                          >
-                            <span className="inline-flex items-center gap-1">
-                              Timestamp
-                              <SortIcon column="timestamp" sortKey={sortKey} sortDir={sortDir} />
-                            </span>
-                          </TableHead>
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("state")}
-                            aria-sort={sortKey === "state" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                          >
-                            <span className="inline-flex items-center gap-1">
-                              State
-                              <SortIcon column="state" sortKey={sortKey} sortDir={sortDir} />
-                            </span>
-                          </TableHead>
-                          <TableHead
-                            className="text-right cursor-pointer select-none"
-                            onClick={() => handleSort("progress")}
-                            aria-sort={sortKey === "progress" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                          >
-                            <span className="inline-flex items-center gap-1 justify-end">
-                              {progressLabel}
-                              <SortIcon column="progress" sortKey={sortKey} sortDir={sortDir} />
-                            </span>
-                          </TableHead>
-                          <TableHead
-                            className="text-right cursor-pointer select-none"
-                            onClick={() => handleSort("attempt_id")}
-                            aria-sort={sortKey === "attempt_id" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                          >
-                            <span className="inline-flex items-center gap-1 justify-end">
-                              Attempt
-                              <SortIcon column="attempt_id" sortKey={sortKey} sortDir={sortDir} />
-                            </span>
-                          </TableHead>
-                          <TableHead
-                            className="cursor-pointer select-none"
-                            onClick={() => handleSort("condition")}
-                            aria-sort={sortKey === "condition" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
-                          >
-                            <span className="inline-flex items-center gap-1">
-                              Condition
-                              <SortIcon column="condition" sortKey={sortKey} sortDir={sortDir} />
-                            </span>
-                          </TableHead>
-                        </TableRow>
-                        {/* Filter row */}
-                        <TableRow>
-                          <TableHead className="p-1">
-                            <Input
-                              placeholder={`Search ${entityLabel.toLowerCase()}…`}
-                              value={colTextFilters.entity_id}
-                              onChange={(e) => handleColTextFilter("entity_id", e.target.value)}
-                              className="h-7 text-xs"
-                            />
-                          </TableHead>
-                          <TableHead className="p-1">
-                            <Input
-                              placeholder="Search time…"
-                              value={colTextFilters.timestamp}
-                              onChange={(e) => handleColTextFilter("timestamp", e.target.value)}
-                              className="h-7 text-xs"
-                            />
-                          </TableHead>
-                          <TableHead className="p-1">
-                            <MultiSelect
-                              options={data.uniqueStates}
-                              selected={colStateFilter}
-                              onChange={(val) => {
-                                setColStateFilter(val);
-                                setPage(0);
-                              }}
-                              placeholder="All States"
-                              className="min-w-[120px]"
-                            />
-                          </TableHead>
-                          <TableHead className="p-1">
-                            <Input
-                              placeholder="Search…"
-                              value={colTextFilters.progress}
-                              onChange={(e) => handleColTextFilter("progress", e.target.value)}
-                              className="h-7 text-xs ml-auto w-20"
-                            />
-                          </TableHead>
-                          <TableHead className="p-1">
-                            <Input
-                              placeholder="Search…"
-                              value={colTextFilters.attempt_id}
-                              onChange={(e) => handleColTextFilter("attempt_id", e.target.value)}
-                              className="h-7 text-xs ml-auto w-20"
-                            />
-                          </TableHead>
-                          <TableHead className="p-1">
-                            <MultiSelect
-                              options={conditionOptions}
-                              selected={colConditionFilter}
-                              onChange={(val) => {
-                                setColConditionFilter(val);
-                                setPage(0);
-                              }}
-                              placeholder="All Conditions"
-                              className="min-w-[120px]"
-                            />
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedEntries.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground text-sm">
-                              No entries match the current filters.
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          paginatedEntries.map((entry, idx) => {
-                            const eid =
-                              entry.entity_id || entry.vehicle_id || "—";
-                            return (
-                              <TableRow
-                                key={`${eid}-${entry.timestamp}-${idx}`}
-                              >
-                                <TableCell className="font-mono text-xs">
-                                  {eid}
-                                </TableCell>
-                                <TableCell className="text-xs text-muted-foreground">
-                                  {new Date(
-                                    entry.timestamp
-                                  ).toLocaleString()}
-                                </TableCell>
-                                <TableCell>
-                                  <StateBadge state={entry.state} />
-                                </TableCell>
-                                <TableCell className="text-right font-mono">
-                                  {entry.progress}%
-                                </TableCell>
-                                <TableCell className="text-right font-mono">
-                                  {entry.attempt_id}
-                                </TableCell>
-                                <TableCell>
-                                  {entry.condition ? (
-                                    <Badge
-                                      variant="destructive"
-                                      className="text-xs"
-                                    >
-                                      {entry.condition}
-                                    </Badge>
-                                  ) : (
-                                    <span className="text-muted-foreground">
-                                      —
-                                    </span>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Pagination */}
-                  <div className="flex items-center justify-between pt-4">
-                    <p className="text-xs text-muted-foreground">
-                      Showing {tableSortedEntries.length > 0 ? page * pageSize + 1 : 0}–
-                      {Math.min(
-                        (page + 1) * pageSize,
-                        tableSortedEntries.length
-                      )}{" "}
-                      of{" "}
-                      {tableSortedEntries.length.toLocaleString()}
-                    </p>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={page === 0}
-                        onClick={() => setPage(page - 1)}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={page >= tableTotalPages - 1}
-                        onClick={() => setPage(page + 1)}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {data && (
+                <DataTable
+                  data={data}
+                  entityLabel={entityLabel}
+                  wasteLabel={wasteLabel}
+                  progressLabel={progressLabel}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  colTextFilters={colTextFilters}
+                  colStateFilter={colStateFilter}
+                  colConditionFilter={colConditionFilter}
+                  page={page}
+                  pageSize={pageSize}
+                  conditionOptions={conditionOptions}
+                  onSort={(key) => {
+                    handleSort(key);
+                  }}
+                  onColTextFilter={(key, value) => {
+                    handleColTextFilter(key, value);
+                  }}
+                  onColStateFilter={(val) => {
+                    setColStateFilter(val);
+                    setPage(0);
+                  }}
+                  onColConditionFilter={(val) => {
+                    setColConditionFilter(val);
+                    setPage(0);
+                  }}
+                  onPage={setPage}
+                />
+              )}
             </TabsContent>
 
             {/* Tab 3: Wasted Data Analysis */}
@@ -1931,27 +1216,10 @@ export default function Home() {
           <span>
             {isCustom
               ? `${uploadedData?.length.toLocaleString()} entries loaded`
-              : "Seed: 42"}
+              : `${data.filteredEntries.length.toLocaleString()} entries`}
           </span>
         </div>
       </footer>
     </div>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Helper: auto-runs custom analysis when filters change               */
-/* ------------------------------------------------------------------ */
-function FilterRunner({
-  runCustomAnalysis,
-}: {
-  entityFilter: string[];
-  stateFilter: string[];
-  runCustomAnalysis: () => void;
-}) {
-  useEffect(() => {
-    runCustomAnalysis();
-  }, [entityFilter, stateFilter]);
-
-  return null;
 }

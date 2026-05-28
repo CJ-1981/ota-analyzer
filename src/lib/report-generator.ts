@@ -11,51 +11,16 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
-type EnrichedEntry = {
-  entity_id: string;
-  vehicle_id: string;
-  timestamp: string;
-  state: string;
-  progress: number;
-  size_value: number;
-  package_size_mb: number;
-  condition: string | null;
-  attempt_id: number;
-  wasted_data_mb: number;
-};
-
-type FunnelStage = { stage: string; count: number; dropoff: number; dropoff_pct: number };
-type RetryDistribution = { attempts: number; count: number };
-type FailureProgressBucket = { range: string; count: number };
-type WastedByCondition = { condition: string; wasted_gb: number; count: number };
-type TimeSeriesPoint = { date: string; events: number; failures: number; successes: number };
-
-type ReportData = {
-  kpi: {
-    total_entities: number;
-    total_vins: number;
-    total_retries: number;
-    success_rate: number;
-    wasted_data_gb: number;
-  };
-  funnel: FunnelStage[];
-  retryDistribution: RetryDistribution[];
-  failureProgressBuckets: FailureProgressBucket[];
-  wastedByCondition: WastedByCondition[];
-  timeSeries: TimeSeriesPoint[];
-  filteredEntries: EnrichedEntry[];
-};
+import type { AnalyticsResult } from "./analytics";
 
 export function generateReportHtml(
-  data: ReportData,
+  data: AnalyticsResult,
   entityLabel: string,
   wasteLabel: string,
-  isCustom: boolean
+  _isCustom: boolean
 ): string {
   const el = escapeHtml(entityLabel);
   const wl = escapeHtml(wasteLabel);
-  const entityListKey = isCustom ? "entity_id" : "vehicle_id";
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -166,7 +131,7 @@ export function generateReportHtml(
     .slice(0, 100)
     .map(
       (e) =>
-        `<tr><td>${escapeHtml(String(e[entityListKey as keyof typeof e] || e.entity_id))}</td><td>${escapeHtml(e.timestamp)}</td><td>${escapeHtml(e.state)}</td><td>${e.progress}%</td><td>${e.attempt_id}</td><td>${e.condition ? escapeHtml(e.condition) : "—"}</td></tr>`
+        `<tr><td>${escapeHtml(e.entity_id)}</td><td>${escapeHtml(e.timestamp)}</td><td>${escapeHtml(e.state)}</td><td>${e.progress}%</td><td>${e.attempt_id}</td><td>${e.condition ? escapeHtml(e.condition) : "—"}</td></tr>`
     )
     .join("")}
 </table>

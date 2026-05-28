@@ -174,7 +174,7 @@ export function computeAnalytics(
   const enriched = enrichEntries(filtered, config);
   const entityFinalStates = getEntityFinalStates(filtered, config);
   const uniqueEntities = new Set(filtered.map((e) => e.entity_id));
-  const uniqueStates = [...new Set(entries.map((e) => e.state))].sort();
+  const uniqueStates = [...new Set(filtered.map((e) => e.state))].sort();
 
   const successSet = new Set(config.successStates);
   const failureSet = new Set(config.failureStates);
