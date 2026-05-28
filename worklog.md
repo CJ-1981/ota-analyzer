@@ -67,8 +67,8 @@ Work Log:
 - Updated `src/app/page.tsx` — replaced 1958 lines with 1225 lines by importing all extracted components
 - Updated `src/lib/report-generator.ts` — removed duplicated local types (EnrichedEntry, FunnelStage, etc.), now imports AnalyticsResult from analytics.ts; changed entity ID access to always use entity_id (no vehicle_id fallback needed)
 - Removed all duplicated type definitions from page.tsx: EnrichedEntry, SankeyLink, FunnelStage, RetryDistribution, FailureProgressBucket, WastedByCondition, TimeSeriesPoint, AnalyticsData — all replaced with imports from @/lib/analytics (AnalyticsResult)
-- TypeScript strict mode compilation: 0 errors in our source files (only pre-existing errors in ui/ components, examples/, skills/)
-- ESLint: 0 new errors (only pre-existing warnings)
+- TypeScript strict mode compilation: 0 errors (build/export successful)
+- ESLint: 0 new errors (no new warnings introduced)
 
 Stage Summary:
 - page.tsx reduced from 1958 → 1225 lines (37% reduction)

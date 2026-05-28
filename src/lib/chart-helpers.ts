@@ -29,18 +29,16 @@ export const CHART_PALETTE = [
   "#eab308",
 ];
 
-const FALLBACK_COLORS = [
-  "#6366f1", "#8b5cf6", "#3b82f6", "#06b6d4", "#f59e0b",
-  "#10b981", "#ef4444", "#f97316", "#ec4899", "#14b8a6",
-  "#a855f7", "#eab308",
-];
+function computeStringHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++)
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return hash;
+}
 
 export function getStateColor(state: string): string {
   if (STATE_COLORS[state]) return STATE_COLORS[state];
-  let hash = 0;
-  for (let i = 0; i < state.length; i++)
-    hash = state.charCodeAt(i) + ((hash << 5) - hash);
-  return FALLBACK_COLORS[Math.abs(hash) % FALLBACK_COLORS.length];
+  return CHART_PALETTE[Math.abs(computeStringHash(state)) % CHART_PALETTE.length];
 }
 
 const BADGE_CLASSES = [
@@ -70,10 +68,7 @@ const NAMED_BADGES: Record<string, string> = {
 
 export function getStateBadgeClass(state: string): string {
   if (NAMED_BADGES[state]) return NAMED_BADGES[state];
-  let hash = 0;
-  for (let i = 0; i < state.length; i++)
-    hash = state.charCodeAt(i) + ((hash << 5) - hash);
-  return BADGE_CLASSES[Math.abs(hash) % BADGE_CLASSES.length];
+  return BADGE_CLASSES[Math.abs(computeStringHash(state)) % BADGE_CLASSES.length];
 }
 
 export const TOOLTIP_CONTENT_STYLE = {

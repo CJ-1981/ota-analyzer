@@ -16,10 +16,12 @@ export function FlowDiagram({
   links,
   stateOrder,
   entityLabel,
+  entityLabelPlural,
 }: {
   links: SankeyLink[];
   stateOrder: string[];
   entityLabel: string;
+  entityLabelPlural?: string;
 }) {
   const sourceMap = new Map<string, Map<string, number>>();
   const validSources = new Set(stateOrder);
@@ -47,9 +49,13 @@ export function FlowDiagram({
   for (const link of links) {
     if (validSources.has(link.source)) allTargets.add(link.target);
   }
-  const targetList = [...allTargets].sort(
-    (a, b) => stateOrder.indexOf(a) - stateOrder.indexOf(b)
-  );
+  const targetList = [...allTargets].sort((a, b) => {
+    const idxA = stateOrder.indexOf(a);
+    const idxB = stateOrder.indexOf(b);
+    const orderA = idxA === -1 ? stateOrder.length : idxA;
+    const orderB = idxB === -1 ? stateOrder.length : idxB;
+    return orderA - orderB;
+  });
 
   return (
     <Card className="p-4 gap-4">
@@ -76,10 +82,13 @@ export function FlowDiagram({
             />
             <Tooltip
               contentStyle={TOOLTIP_CONTENT_STYLE}
-              formatter={(value: number, name: string) => [
-                `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
-                `→ ${name}`,
-              ]}
+              formatter={(value: number, name: string) => {
+                const label = entityLabelPlural ?? `${entityLabel.toLowerCase()}s`;
+                return [
+                  `${value.toLocaleString()} ${label}`,
+                  `→ ${name}`,
+                ];
+              }}
             />
             <Legend />
             {targetList.map((target) => (

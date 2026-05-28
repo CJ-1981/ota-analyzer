@@ -23,7 +23,6 @@ export type SortKey = "entity_id" | "timestamp" | "state" | "progress" | "attemp
 export type DataTableProps = {
   data: AnalyticsResult;
   entityLabel: string;
-  wasteLabel?: string;
   progressLabel: string;
   sortKey: SortKey | null;
   sortDir: "asc" | "desc";
@@ -62,7 +61,6 @@ function SortIcon({
 export function DataTable({
   data,
   entityLabel,
-  wasteLabel: _wasteLabel,
   progressLabel,
   sortKey,
   sortDir,
@@ -84,9 +82,9 @@ export function DataTable({
       const trimmed = filterText.trim().toLowerCase();
       if (!trimmed) continue;
       entries = entries.filter((entry) => {
-        const val = String(
-          (entry as unknown as Record<string, unknown>)[key] ?? ""
-        ).toLowerCase();
+        const val = key in entry
+          ? String((entry as Record<string, unknown>)[key] ?? "").toLowerCase()
+          : "";
         return val.includes(trimmed);
       });
     }

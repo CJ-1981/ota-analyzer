@@ -1011,7 +1011,6 @@ export default function Home() {
                 <DataTable
                   data={data}
                   entityLabel={entityLabel}
-                  wasteLabel={wasteLabel}
                   progressLabel={progressLabel}
                   sortKey={sortKey}
                   sortDir={sortDir}
