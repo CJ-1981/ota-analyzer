@@ -614,7 +614,7 @@ export default function Home() {
 
     const loadDemo = async () => {
       try {
-        const res = await fetch("/sample-logs.json");
+        const res = await fetch("sample-logs.json");
         const json = await res.json();
         if (cancelled) return;
 
