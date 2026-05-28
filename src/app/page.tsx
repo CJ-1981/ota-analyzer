@@ -697,6 +697,7 @@ export default function Home() {
   }, [uploadedData, config, entityFilter, stateFilter]);
 
   const handleRegenerate = () => {
+    // Data is pre-computed and static — just reset all filters/views
     setEntityFilter([]);
     setStateFilter([]);
     setColFilters({
@@ -707,10 +708,9 @@ export default function Home() {
       attempt_id: "",
       condition: "",
     });
-    setCachedNormalized(null);
-    setCachedAnalytics(null);
-    setFetchTrigger((n) => n + 1);
-    setLoading(true);
+    setSortKey(null);
+    setSortDir("asc");
+    setPage(0);
   };
 
   const handleFileUpload = (file: File) => {
@@ -1019,10 +1019,10 @@ export default function Home() {
               <span className="sm:hidden">Report</span>
             </Button>
             {mode === "demo" && (
-              <Button onClick={handleRegenerate} className="gap-2">
-                <RefreshCw className="h-4 w-4" />
-                <span className="hidden sm:inline">Generate New Data</span>
-                <span className="sm:hidden">New</span>
+              <Button onClick={handleRegenerate} variant="outline" className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                <span className="hidden sm:inline">Reset Filters</span>
+                <span className="sm:hidden">Reset</span>
               </Button>
             )}
           </div>
