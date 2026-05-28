@@ -605,10 +605,12 @@ export default function Home() {
   // Cache for demo mode
   const [cachedNormalized, setCachedNormalized] = useState<ReturnType<typeof normalizeData> | null>(null);
   const [cachedAnalytics, setCachedAnalytics] = useState<Omit<AnalyticsResult, "filteredEntries"> | null>(null);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   // Load pre-computed analytics (fast, 68KB) and raw data for table
   useEffect(() => {
     if (mode !== "demo") return;
+    if (fetchTrigger === 0 && cachedNormalized) return; // already loaded
     setLoading(true);
     let cancelled = false;
 
@@ -645,7 +647,7 @@ export default function Home() {
 
     loadDemo();
     return () => { cancelled = true; };
-  }, [mode]);
+  }, [mode, fetchTrigger]);
 
   // Build full result from cached analytics + filtered entries from raw data
   useEffect(() => {
@@ -697,9 +699,17 @@ export default function Home() {
   const handleRegenerate = () => {
     setEntityFilter([]);
     setStateFilter([]);
+    setColFilters({
+      entity_id: "",
+      timestamp: "",
+      state: "",
+      progress: "",
+      attempt_id: "",
+      condition: "",
+    });
     setCachedNormalized(null);
     setCachedAnalytics(null);
-    setMode("demo");
+    setFetchTrigger((n) => n + 1);
     setLoading(true);
   };
 
