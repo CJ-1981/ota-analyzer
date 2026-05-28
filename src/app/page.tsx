@@ -899,8 +899,6 @@ export default function Home() {
               {/* Re-run analysis for custom mode when filters change */}
               {mode === "custom" && uploadedData && (
                 <FilterRunner
-                  entityFilter={entityFilter}
-                  stateFilter={stateFilter}
                   runCustomAnalysis={runCustomAnalysis}
                 />
               )}

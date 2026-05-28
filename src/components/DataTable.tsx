@@ -279,7 +279,7 @@ export function DataTable({
                 <TableHead className="p-1">
                   <Input
                     placeholder={`Search ${entityLabel.toLowerCase()}…`}
-                    value={colTextFilters.entity_id}
+                    value={colTextFilters.entity_id ?? ""}
                     onChange={(e) =>
                       onColTextFilter("entity_id", e.target.value)
                     }
@@ -289,7 +289,7 @@ export function DataTable({
                 <TableHead className="p-1">
                   <Input
                     placeholder="Search time…"
-                    value={colTextFilters.timestamp}
+                    value={colTextFilters.timestamp ?? ""}
                     onChange={(e) =>
                       onColTextFilter("timestamp", e.target.value)
                     }
@@ -310,7 +310,7 @@ export function DataTable({
                 <TableHead className="p-1">
                   <Input
                     placeholder="Search…"
-                    value={colTextFilters.progress}
+                    value={colTextFilters.progress ?? ""}
                     onChange={(e) =>
                       onColTextFilter("progress", e.target.value)
                     }
@@ -320,7 +320,7 @@ export function DataTable({
                 <TableHead className="p-1">
                   <Input
                     placeholder="Search…"
-                    value={colTextFilters.attempt_id}
+                    value={colTextFilters.attempt_id ?? ""}
                     onChange={(e) =>
                       onColTextFilter("attempt_id", e.target.value)
                     }
@@ -355,15 +355,15 @@ export function DataTable({
                   const eid = entry.entity_id || "—";
                   return (
                     <TableRow
-                      key={`${eid}-${entry.timestamp}-${idx}`}
+                      key={`${eid}-${entry.timestamp}-${entry.state}-${entry.progress}-${entry.attempt_id}`}
                     >
                       <TableCell className="font-mono text-xs">
                         {eid}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {new Date(
-                          entry.timestamp
-                        ).toLocaleString()}
+                        {entry.timestamp
+                          ? new Date(entry.timestamp).toLocaleString()
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         <StateBadge state={entry.state} />

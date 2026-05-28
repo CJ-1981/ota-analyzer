@@ -48,7 +48,7 @@ export function ColumnMappingSelector({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">— not mapped —</SelectItem>
+              {opt.optional && <SelectItem value="__none__">— not mapped —</SelectItem>}
               {columns.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
