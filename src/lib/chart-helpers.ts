@@ -1,32 +1,33 @@
 /* ------------------------------------------------------------------ */
-/*  Chart & state color helpers — shared across components             */
+/*  Chart & state color helpers — Wired monochrome editorial palette   */
 /* ------------------------------------------------------------------ */
 
+/* Monochrome ink palette — no chromatic accents */
 export const STATE_COLORS: Record<string, string> = {
-  INITIATED: "#6366f1",
-  AUTHENTICATING: "#8b5cf6",
-  DOWNLOADING: "#3b82f6",
-  VERIFYING: "#06b6d4",
-  INSTALLING: "#f59e0b",
-  COMPLETED: "#10b981",
-  FAILED: "#ef4444",
-  RETRYING: "#f97316",
-  ABORTED: "#ec4899",
+  INITIATED: "#000000",
+  AUTHENTICATING: "#1a1a1a",
+  DOWNLOADING: "#333333",
+  VERIFYING: "#555555",
+  INSTALLING: "#757575",
+  COMPLETED: "#2a2a2a",
+  FAILED: "#000000",
+  RETRYING: "#4a4a4a",
+  ABORTED: "#3a3a3a",
 };
 
 export const CHART_PALETTE = [
-  "#6366f1",
-  "#8b5cf6",
-  "#3b82f6",
-  "#06b6d4",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#f97316",
-  "#ec4899",
-  "#14b8a6",
-  "#a855f7",
-  "#eab308",
+  "#000000",
+  "#1a1a1a",
+  "#333333",
+  "#4a4a4a",
+  "#555555",
+  "#6a6a6a",
+  "#757575",
+  "#8a8a8a",
+  "#999999",
+  "#aaaaaa",
+  "#bbbbbb",
+  "#cccccc",
 ];
 
 function computeStringHash(str: string): number {
@@ -41,17 +42,18 @@ export function getStateColor(state: string): string {
   return CHART_PALETTE[Math.abs(computeStringHash(state)) % CHART_PALETTE.length];
 }
 
+/* Badge classes — monochrome ink system */
 const BADGE_CLASSES = [
-  "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300",
-  "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
-  "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
-  "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
-  "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-  "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
-  "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
+  "bg-ink/10 text-ink",
+  "bg-ink/8 text-ink",
+  "bg-ink/6 text-ink",
+  "bg-ink/5 text-ink",
+  "bg-secondary text-ink",
+  "bg-ink/12 text-ink",
+  "bg-ink/4 text-ink",
+  "bg-ink/7 text-ink",
+  "bg-ink/9 text-ink",
+  "bg-ink/3 text-ink",
 ];
 
 const NAMED_BADGES: Record<string, string> = {
@@ -71,10 +73,12 @@ export function getStateBadgeClass(state: string): string {
   return BADGE_CLASSES[Math.abs(computeStringHash(state)) % BADGE_CLASSES.length];
 }
 
+/* Tooltip — square corners, no shadow, hairline border */
 export const TOOLTIP_CONTENT_STYLE = {
-  borderRadius: "8px",
-  border: "1px solid var(--border, #e5e7eb)",
-  background: "var(--popover, #ffffff)",
-  color: "var(--popover-foreground, #1a1a1a)",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+  borderRadius: "0px",
+  border: "1px solid #e0e0e0",
+  background: "#ffffff",
+  color: "#000000",
+  fontSize: "13px",
+  fontFamily: "Inter, system-ui, sans-serif",
 };

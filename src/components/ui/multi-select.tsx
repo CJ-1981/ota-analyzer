@@ -61,7 +61,7 @@ export function MultiSelect({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-9 w-full items-center justify-between border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       >
         <div className="flex flex-1 items-center gap-1 overflow-hidden">
           {selected.length === 0 ? (
@@ -111,7 +111,7 @@ export function MultiSelect({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 w-full min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 max-h-60 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full min-w-[8rem] border bg-popover p-1 text-popover-foreground animate-in fade-in-0 zoom-in-95 max-h-60 overflow-y-auto">
           {/* Select All / Clear All */}
           <div className="flex items-center justify-between px-2 py-1.5 border-b mb-1">
             <button

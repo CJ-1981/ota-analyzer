@@ -19,7 +19,9 @@ export function FunnelChart({
   return (
     <Card className="p-4 gap-4">
       <CardHeader className="p-0 pb-2">
-        <CardTitle className="text-base">Pipeline Funnel</CardTitle>
+        <CardTitle className="text-base font-bold uppercase tracking-wide">
+          Pipeline Funnel
+        </CardTitle>
         <CardDescription>
           {entityLabel} progression through stages
         </CardDescription>
@@ -28,25 +30,24 @@ export function FunnelChart({
         <div className="space-y-2">
           {chartData.map((item, idx) => (
             <div key={item.stage} className="flex items-center gap-3">
-              <span className="text-xs font-medium text-muted-foreground w-28 text-right shrink-0 truncate">
+              <span className="text-xs font-bold uppercase tracking-wide text-body w-28 text-right shrink-0 truncate">
                 {item.stage}
               </span>
               <div className="flex-1">
                 <div
-                  className="h-8 rounded-md flex items-center justify-end px-2 transition-all"
+                  className="h-8 flex items-center justify-end px-2 transition-all"
                   style={{
                     width: `${Math.max(Number(item.width_pct), 8)}%`,
                     backgroundColor: CHART_PALETTE[idx] || "#888",
-                    opacity: 0.85,
                   }}
                 >
-                  <span className="text-xs font-semibold text-white">
+                  <span className="text-xs font-bold text-white">
                     {item.count.toLocaleString()}
                   </span>
                 </div>
               </div>
               {item.dropoff > 0 && (
-                <span className="text-xs text-rose-500 shrink-0 w-20 text-right">
+                <span className="text-xs font-bold text-ink shrink-0 w-20 text-right">
                   -{item.dropoff.toLocaleString()} ({item.dropoff_pct}%)
                 </span>
               )}

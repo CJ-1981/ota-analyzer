@@ -133,7 +133,7 @@ export function DataTable({
       <CardHeader className="p-0 pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base">Log Entries</CardTitle>
+            <CardTitle className="text-base font-bold uppercase tracking-wide">Log Entries</CardTitle>
             <CardDescription>
               Page {tableTotalPages > 0 ? page + 1 : 0} of {tableTotalPages} (
               {tableSortedEntries.length.toLocaleString()} shown
@@ -343,7 +343,7 @@ export function DataTable({
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="h-24 text-center text-muted-foreground text-sm"
+                    className="h-24 text-center text-body text-sm font-bold uppercase tracking-wider"
                   >
                     No entries match the current filters.
                   </TableCell>
@@ -358,7 +358,7 @@ export function DataTable({
                       <TableCell className="font-mono text-xs">
                         {eid}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-body">
                         {entry.timestamp
                           ? new Date(entry.timestamp).toLocaleString()
                           : "—"}
@@ -381,7 +381,7 @@ export function DataTable({
                             {entry.condition}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">
+                          <span className="text-body">
                             —
                           </span>
                         )}
@@ -395,8 +395,8 @@ export function DataTable({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between pt-4">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between pt-4 border-t border-hairline">
+          <p className="text-xs text-body font-bold uppercase tracking-wider">
             Showing{" "}
             {tableSortedEntries.length > 0 ? page * pageSize + 1 : 0}–
             {Math.min(

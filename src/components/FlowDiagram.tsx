@@ -60,7 +60,9 @@ export function FlowDiagram({
   return (
     <Card className="p-4 gap-4">
       <CardHeader className="p-0 pb-2">
-        <CardTitle className="text-base">State Transition Flow</CardTitle>
+        <CardTitle className="text-base font-bold uppercase tracking-wide">
+          State Transition Flow
+        </CardTitle>
         <CardDescription>
           Horizontal stacked view of state-to-state transitions
         </CardDescription>
@@ -72,13 +74,13 @@ export function FlowDiagram({
             layout="vertical"
             margin={{ left: 20, right: 20 }}
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 11, fill: "#757575" }} />
             <YAxis
               dataKey="source"
               type="category"
               width={110}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "#000000", fontWeight: 700 }}
             />
             <Tooltip
               contentStyle={TOOLTIP_CONTENT_STYLE}
@@ -98,6 +100,7 @@ export function FlowDiagram({
                 stackId="a"
                 fill={getStateColor(target)}
                 name={target}
+                radius={0}
               />
             ))}
           </BarChart>

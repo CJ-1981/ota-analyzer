@@ -367,15 +367,15 @@ export default function Home() {
     }
   }, [toggleSeries]);
 
-  // Retry bar chart colors
+  // Retry bar chart colors — Wired monochrome ink palette
   const retryColors = [
-    "#10b981",
-    "#f59e0b",
-    "#ef4444",
-    "#ec4899",
-    "#8b5cf6",
-    "#06b6d4",
-    "#6366f1",
+    "#000000",
+    "#1a1a1a",
+    "#333333",
+    "#4a4a4a",
+    "#555555",
+    "#6a6a6a",
+    "#757575",
   ];
 
   /* ---------------------------------------------------------------- */
@@ -397,8 +397,8 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground text-sm">
+          <RefreshCw className="h-8 w-8 animate-spin text-body" />
+          <p className="text-body text-sm font-bold uppercase tracking-wider">
             Loading analytics data...
           </p>
         </div>
@@ -413,17 +413,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b px-4 py-6 md:px-8">
+      {/* Masthead Band — Wired signature */}
+      <header className="border-b border-ink px-4 py-6 md:px-8">
         <div className="max-w-7xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+            <h1 className="font-display text-2xl md:text-4xl font-normal tracking-tight leading-tight">
               Multi-State Log Analysis
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-body text-sm mt-1 uppercase tracking-wider font-bold">
               {isCustom
-                ? `${entityLabel} Analytics Dashboard — ${uploadedFileName}`
-                : "Vehicle OTA Update Analytics Dashboard"}
+                ? `${entityLabel} Analytics — ${uploadedFileName}`
+                : "Vehicle OTA Update Analytics"}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -448,7 +448,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Computing overlay */}
           {computing && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-body font-bold uppercase tracking-wider">
               <RefreshCw className="h-4 w-4 animate-spin" />
               Recomputing analytics...
             </div>
@@ -478,7 +478,7 @@ export default function Home() {
             </div>
 
             <CollapsibleContent className="mt-4 space-y-6">
-              <Card className="p-4 md:p-6 space-y-6">
+              <Card className="p-4 md:p-6 space-y-6 bg-secondary border-hairline">
                 {/* Section A: Data Source */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -517,10 +517,10 @@ export default function Home() {
                     <div className="space-y-3">
                       {/* Drag & Drop zone */}
                       <div
-                        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                        className={`border-2 border-dashed p-8 text-center transition-colors ${
                           dragOver
-                            ? "border-primary bg-primary/5"
-                            : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                            ? "border-ink bg-ink/5"
+                            : "border-hairline hover:border-ink/50"
                         }`}
                         onDragOver={(e) => {
                           e.preventDefault();
@@ -740,46 +740,46 @@ export default function Home() {
             </CollapsibleContent>
           </Collapsible>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4 gap-2">
+          {/* KPI Cards — magazine story-row style with hairline dividers */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-hairline border border-hairline">
+            <div className="p-4 gap-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs">
+                <CardDescription className="text-xs font-bold uppercase tracking-wider">
                   Total {entityLabel}s
                 </CardDescription>
-                <Car className="h-4 w-4 text-muted-foreground" />
+                <Car className="h-4 w-4 text-body" />
               </div>
-              <div className="text-2xl font-bold">
+              <div className="font-display text-2xl">
                 {(data.kpi.total_entities || data.kpi.total_vins).toLocaleString()}
               </div>
-            </Card>
-            <Card className="p-4 gap-2">
+            </div>
+            <div className="p-4 gap-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs">Total Retries</CardDescription>
-                <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                <CardDescription className="text-xs font-bold uppercase tracking-wider">Total Retries</CardDescription>
+                <RotateCcw className="h-4 w-4 text-body" />
               </div>
-              <div className="text-2xl font-bold">
+              <div className="font-display text-2xl">
                 {data.kpi.total_retries.toLocaleString()}
               </div>
-            </Card>
-            <Card className="p-4 gap-2">
+            </div>
+            <div className="p-4 gap-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs">Success Rate</CardDescription>
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CardDescription className="text-xs font-bold uppercase tracking-wider">Success Rate</CardDescription>
+                <CheckCircle2 className="h-4 w-4 text-ink" />
               </div>
-              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="font-display text-2xl">
                 {data.kpi.success_rate}%
               </div>
-            </Card>
-            <Card className="p-4 gap-2">
+            </div>
+            <div className="p-4 gap-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs">{wasteLabel}</CardDescription>
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <CardDescription className="text-xs font-bold uppercase tracking-wider">{wasteLabel}</CardDescription>
+                <AlertTriangle className="h-4 w-4 text-ink" />
               </div>
-              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              <div className="font-display text-2xl">
                 {data.kpi.wasted_data_gb} GB
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -816,7 +816,7 @@ export default function Home() {
               {/* Transition table */}
               <Card className="p-4 gap-4">
                 <CardHeader className="p-0 pb-2">
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-base font-bold uppercase tracking-wide">
                     State Transition Summary
                   </CardTitle>
                   <CardDescription>Top 20 transitions by count</CardDescription>
@@ -920,7 +920,7 @@ export default function Home() {
                 {/* Retry Distribution */}
                 <Card className="p-4 gap-4">
                   <CardHeader className="p-0 pb-2">
-                    <CardTitle className="text-base">
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">
                       Retry Distribution
                     </CardTitle>
                     <CardDescription>
@@ -933,18 +933,19 @@ export default function Home() {
                         data={data.retryDistribution}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                         <XAxis
                           dataKey="attempts"
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: 11, fill: "#757575" }}
                           label={{
                             value: "# Attempts",
                             position: "insideBottom",
                             offset: -2,
-                            fontSize: 11,
+                            fontSize: 10,
+                            fill: "#757575",
                           }}
                         />
-                        <YAxis tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
                           formatter={(value: number) => [
@@ -955,7 +956,7 @@ export default function Home() {
                         <Bar
                           dataKey="count"
                           name={entityLabel + "s"}
-                          radius={[4, 4, 0, 0]}
+                          radius={0}
                         >
                           {data.retryDistribution.map((_, idx) => (
                             <Cell
@@ -972,7 +973,7 @@ export default function Home() {
                 {/* Time Series */}
                 <Card className="p-4 gap-4">
                   <CardHeader className="p-0 pb-2">
-                    <CardTitle className="text-base">Events Over Time</CardTitle>
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">Events Over Time</CardTitle>
                     <CardDescription>Daily log event counts</CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -981,13 +982,13 @@ export default function Home() {
                         data={data.timeSeries}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                         <XAxis
                           dataKey="date"
-                          tick={{ fontSize: 10 }}
+                          tick={{ fontSize: 10, fill: "#757575" }}
                           tickFormatter={(v) => v.slice(5)}
                         />
-                        <YAxis tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
                         />
@@ -998,8 +999,8 @@ export default function Home() {
                         <Area
                           type="monotone"
                           dataKey="events"
-                          stroke="#6366f1"
-                          fill="#6366f120"
+                          stroke="#000000"
+                          fill="#00000015"
                           name="Total Events"
                           hide={hiddenSeries["events"]}
                           opacity={hiddenSeries["events"] ? 0 : undefined}
@@ -1007,8 +1008,8 @@ export default function Home() {
                         <Area
                           type="monotone"
                           dataKey="successes"
-                          stroke="#10b981"
-                          fill="#10b98120"
+                          stroke="#333333"
+                          fill="#33333315"
                           name="Successes"
                           hide={hiddenSeries["successes"]}
                           opacity={hiddenSeries["successes"] ? 0 : undefined}
@@ -1016,8 +1017,8 @@ export default function Home() {
                         <Area
                           type="monotone"
                           dataKey="failures"
-                          stroke="#ef4444"
-                          fill="#ef444420"
+                          stroke="#757575"
+                          fill="#75757515"
                           name="Failures"
                           hide={hiddenSeries["failures"]}
                           opacity={hiddenSeries["failures"] ? 0 : undefined}
@@ -1067,7 +1068,7 @@ export default function Home() {
                 {/* Failure Progress Distribution (Histogram) */}
                 <Card className="p-4 gap-4">
                   <CardHeader className="p-0 pb-2">
-                    <CardTitle className="text-base">
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">
                       Progress at Failure
                     </CardTitle>
                     <CardDescription>
@@ -1080,15 +1081,15 @@ export default function Home() {
                         data={data.failureProgressBuckets}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                         <XAxis
                           dataKey="range"
-                          tick={{ fontSize: 10 }}
+                          tick={{ fontSize: 10, fill: "#757575" }}
                           angle={-45}
                           textAnchor="end"
                           height={60}
                         />
-                        <YAxis tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
                           formatter={(value: number) => [
@@ -1099,8 +1100,8 @@ export default function Home() {
                         <Bar
                           dataKey="count"
                           name="Failures"
-                          fill="#ef4444"
-                          radius={[4, 4, 0, 0]}
+                          fill="#000000"
+                          radius={0}
                           opacity={0.85}
                         />
                       </BarChart>
@@ -1111,7 +1112,7 @@ export default function Home() {
                 {/* Wasted Data by Condition */}
                 <Card className="p-4 gap-4">
                   <CardHeader className="p-0 pb-2">
-                    <CardTitle className="text-base">
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">
                       {wasteLabel} by Condition
                     </CardTitle>
                     <CardDescription>
@@ -1132,13 +1133,14 @@ export default function Home() {
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
+                          stroke="#e0e0e0"
                           horizontal={false}
                         />
-                        <XAxis type="number" tick={{ fontSize: 12 }} />
+                        <XAxis type="number" tick={{ fontSize: 11, fill: "#757575" }} />
                         <YAxis
                           dataKey="condition"
                           type="category"
-                          tick={{ fontSize: 11 }}
+                          tick={{ fontSize: 11, fill: "#000000", fontWeight: 700 }}
                           width={110}
                         />
                         <Tooltip
@@ -1161,8 +1163,8 @@ export default function Home() {
                         <Bar
                           dataKey="wasted_gb"
                           name={`Wasted (GB)`}
-                          fill="#f59e0b"
-                          radius={[0, 4, 4, 0]}
+                          fill="#333333"
+                          radius={0}
                           opacity={hiddenSeries["wasted_gb"] ? 0 : 0.85}
                           hide={hiddenSeries["wasted_gb"]}
                         />
@@ -1175,7 +1177,7 @@ export default function Home() {
               {/* Condition Breakdown Table */}
               <Card className="p-4 gap-4">
                 <CardHeader className="p-0 pb-2">
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-base font-bold uppercase tracking-wide">
                     {wasteLabel} Breakdown
                   </CardTitle>
                   <CardDescription>
@@ -1204,7 +1206,7 @@ export default function Home() {
                                 {w.condition}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-mono text-amber-600 dark:text-amber-400">
+                            <TableCell className="text-right font-mono font-bold">
                               {w.wasted_gb} GB
                             </TableCell>
                             <TableCell className="text-right font-mono">
@@ -1232,10 +1234,12 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t px-4 py-4 md:px-8 mt-auto">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-muted-foreground">
-          <span>Multi-State Log Analyzer</span>
+      {/* Footer Band — Wired near-black footer */}
+      <footer className="bg-ink px-4 py-6 md:px-8 mt-auto">
+        <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-white/70 font-bold uppercase tracking-wider">
+          <span className="font-display text-sm text-white tracking-tight normal-case">
+            Multi-State Log Analyzer
+          </span>
           <span>
             {isCustom
               ? `${uploadedData?.length.toLocaleString()} entries loaded`

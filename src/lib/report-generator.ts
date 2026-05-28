@@ -28,24 +28,22 @@ export function generateReportHtml(
 <title>Multi-State Log Analysis Report</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f8; color: #1a1a1a; padding: 2rem; }
-  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.15rem; margin-top: 2rem; margin-bottom: 1rem; color: #333; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.5rem; }
-  .subtitle { color: #666; margin-bottom: 1.5rem; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
-  .kpi-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .kpi-label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
-  .kpi-value { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; }
-  .kpi-value.green { color: #10b981; }
-  .kpi-value.amber { color: #f59e0b; }
-  table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid #eee; font-size: 0.85rem; }
-  th { background: #f5f5f5; font-weight: 600; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
-  .badge-success { background: #d1fae5; color: #065f46; }
-  .badge-danger { background: #fee2e2; color: #991b1b; }
-  .badge-warning { background: #fef3c7; color: #92400e; }
-  .footer { margin-top: 2rem; color: #999; font-size: 0.8rem; }
+  body { font-family: 'Playfair Display', Georgia, serif; background: #ffffff; color: #000000; padding: 2rem; }
+  h1 { font-size: 2rem; font-weight: 400; margin-bottom: 0.25rem; letter-spacing: -0.3px; }
+  h2 { font-size: 0.85rem; margin-top: 2rem; margin-bottom: 1rem; color: #000000; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.5rem; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+  .subtitle { color: #757575; margin-bottom: 1.5rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 2rem; border: 1px solid #e0e0e0; }
+  .kpi-card { background: #ffffff; padding: 1.25rem; }
+  .kpi-label { font-size: 0.7rem; color: #757575; text-transform: uppercase; letter-spacing: 0.1em; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; }
+  .kpi-value { font-size: 1.75rem; font-weight: 400; margin-top: 0.25rem; }
+  table { width: 100%; border-collapse: collapse; background: #ffffff; }
+  th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid #e0e0e0; font-size: 0.85rem; font-family: 'Inter', system-ui, sans-serif; }
+  th { font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.7rem; color: #757575; }
+  .badge { display: inline-block; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-success { background: #f5f5f5; color: #000000; }
+  .badge-danger { background: #000000; color: #ffffff; }
+  .badge-warning { background: #333333; color: #ffffff; }
+  .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; color: #757575; font-size: 0.75rem; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 </style>
 </head>
 <body>
@@ -64,11 +62,11 @@ export function generateReportHtml(
   </div>
   <div class="kpi-card">
     <div class="kpi-label">Success Rate</div>
-    <div class="kpi-value green">${data.kpi.success_rate}%</div>
+    <div class="kpi-value">${data.kpi.success_rate}%</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-label">${wl}</div>
-    <div class="kpi-value amber">${data.kpi.wasted_data_gb} GB</div>
+    <div class="kpi-value">${data.kpi.wasted_data_gb} GB</div>
   </div>
 </div>
 
