@@ -26,9 +26,12 @@ export function generateReportHtml(
 <head>
 <meta charset="UTF-8"/>
 <title>Multi-State Log Analysis Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Playfair Display', Georgia, serif; background: #ffffff; color: #000000; padding: 2rem; }
+  body { font-family: Lora, Georgia, serif; background: #ffffff; color: #000000; padding: 2rem; }
   h1 { font-size: 2rem; font-weight: 400; margin-bottom: 0.25rem; letter-spacing: -0.3px; }
   h2 { font-size: 0.85rem; margin-top: 2rem; margin-bottom: 1rem; color: #000000; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.5rem; font-family: 'Inter', system-ui, sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
   .subtitle { color: #757575; margin-bottom: 1.5rem; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }

@@ -129,12 +129,12 @@
 /* Wired Typography Classes */
 @layer utilities {
   .font-display {
-    font-family: var(--font-playfair), "Playfair Display", Georgia, serif;
+    font-family: var(--font-playfair), Playfair Display, Georgia, serif;
   }
   .font-serif {
-    font-family: var(--font-lora), "Lora", Georgia, serif;
+    font-family: var(--font-lora), Lora, Georgia, serif;
   }
   .font-sans {
-    font-family: var(--font-apercu), "Inter", system-ui, sans-serif;
+    font-family: var(--font-apercu), Inter, system-ui, sans-serif;
   }
 }

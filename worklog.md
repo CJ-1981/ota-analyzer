@@ -9,7 +9,7 @@ Work Log:
 - Rewrote `globals.css` — Wired color palette (black/white/ink/hairline/body), 0px radius, light-only (removed dark mode), added font-display/font-serif/font-sans utility classes
 - Rewrote `layout.tsx` — Replaced Geist fonts with Playfair Display (display serif), Lora (body serif), Inter (sans metadata)
 - Updated 10 shadcn/ui primitives — removed all `rounded-*`, `shadow-*`, `dark:*` references: card, button, badge, input, tabs, table, separator, select, radio-group, multi-select
-- Updated `chart-helpers.ts` — Monochrome ink palette (#000000 through #cccccc), monochrome badge classes, square tooltip corners, no shadow
+- Updated `chart-helpers.ts` — Monochrome ink palette (#000000 through #aaaaaa), monochrome badge classes, square tooltip corners, no shadow
 - Updated `StateBadge.tsx` — Square corners, bold uppercase tracking
 - Updated `FlowDiagram.tsx` — Wired grid stroke, tick styling
 - Updated `FunnelChart.tsx` — Square bars, uppercase labels
@@ -21,6 +21,6 @@ Work Log:
 
 Stage Summary:
 - Branch: `feat/wired-design-system` pushed to origin
-- 19 files changed, 298 insertions, 260 deletions
+- 20 files changed, 298 insertions, 260 deletions
 - PR link: https://github.com/CJ-1981/ota-analyzer/pull/new/feat/wired-design-system
 - All Wired design system principles applied: square corners, no shadows, black-white duet, serif display/sans labels, hairline dividers, light-only, monochrome charts, editorial typography
