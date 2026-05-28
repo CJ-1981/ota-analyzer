@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { DataKey } from "recharts/types/util/types";
 import {
   BarChart3,
   Activity,
@@ -354,6 +355,17 @@ export default function Home() {
     if (!data) return [];
     return data.wastedByCondition.map((w) => w.condition);
   }, [data]);
+
+  // Clickable legend: track hidden series per chart
+  const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
+  const toggleSeries = useCallback((dataKey: string) => {
+    setHiddenSeries((prev) => ({ ...prev, [dataKey]: !prev[dataKey] }));
+  }, []);
+  const handleLegendClick = useCallback((data: { dataKey?: DataKey<string> }) => {
+    if (typeof data.dataKey === "string") {
+      toggleSeries(data.dataKey);
+    }
+  }, [toggleSeries]);
 
   // Retry bar chart colors
   const retryColors = [
@@ -979,13 +991,18 @@ export default function Home() {
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
                         />
-                        <Legend />
+                        <Legend
+                          onClick={handleLegendClick}
+                          wrapperStyle={{ cursor: "pointer" }}
+                        />
                         <Area
                           type="monotone"
                           dataKey="events"
                           stroke="#6366f1"
                           fill="#6366f120"
                           name="Total Events"
+                          hide={hiddenSeries["events"]}
+                          opacity={hiddenSeries["events"] ? 0 : undefined}
                         />
                         <Area
                           type="monotone"
@@ -993,6 +1010,8 @@ export default function Home() {
                           stroke="#10b981"
                           fill="#10b98120"
                           name="Successes"
+                          hide={hiddenSeries["successes"]}
+                          opacity={hiddenSeries["successes"] ? 0 : undefined}
                         />
                         <Area
                           type="monotone"
@@ -1000,6 +1019,8 @@ export default function Home() {
                           stroke="#ef4444"
                           fill="#ef444420"
                           name="Failures"
+                          hide={hiddenSeries["failures"]}
+                          opacity={hiddenSeries["failures"] ? 0 : undefined}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -1133,13 +1154,17 @@ export default function Home() {
                             return [value, name];
                           }}
                         />
-                        <Legend />
+                        <Legend
+                          onClick={handleLegendClick}
+                          wrapperStyle={{ cursor: "pointer" }}
+                        />
                         <Bar
                           dataKey="wasted_gb"
                           name={`Wasted (GB)`}
                           fill="#f59e0b"
                           radius={[0, 4, 4, 0]}
-                          opacity={0.85}
+                          opacity={hiddenSeries["wasted_gb"] ? 0 : 0.85}
+                          hide={hiddenSeries["wasted_gb"]}
                         />
                       </BarChart>
                     </ResponsiveContainer>
