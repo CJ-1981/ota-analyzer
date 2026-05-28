@@ -1,33 +1,34 @@
 /* ------------------------------------------------------------------ */
-/*  Chart & state color helpers — Wired monochrome editorial palette   */
+/*  Chart & state color helpers — distinct chromatic palette            */
 /* ------------------------------------------------------------------ */
 
-/* Monochrome ink palette — no chromatic accents */
+/* State colors — visually distinct for charts and flow diagrams */
 export const STATE_COLORS: Record<string, string> = {
-  INITIATED: "#cccccc",
-  AUTHENTICATING: "#bbbbbb",
-  DOWNLOADING: "#999999",
-  VERIFYING: "#757575",
-  INSTALLING: "#555555",
-  COMPLETED: "#000000",
-  FAILED: "#333333",
-  RETRYING: "#4a4a4a",
-  ABORTED: "#8a8a8a",
+  INITIATED: "#94a3b8",     /* slate-400 — neutral starting point */
+  AUTHENTICATING: "#60a5fa", /* blue-400 — verification phase */
+  DOWNLOADING: "#38bdf8",   /* sky-400 — data transfer */
+  VERIFYING: "#a78bfa",     /* violet-400 — integrity check */
+  INSTALLING: "#34d399",    /* emerald-400 — progress */
+  COMPLETED: "#22c55e",     /* green-500 — success */
+  FAILED: "#ef4444",        /* red-500 — error */
+  RETRYING: "#f59e0b",      /* amber-500 — retry */
+  ABORTED: "#f87171",       /* red-400 — cancelled */
 };
 
+/* Chart palette — 12 distinct hues for bars, series, etc. */
 export const CHART_PALETTE = [
-  "#000000",
-  "#1a1a1a",
-  "#333333",
-  "#4a4a4a",
-  "#555555",
-  "#6a6a6a",
-  "#757575",
-  "#8a8a8a",
-  "#999999",
-  "#aaaaaa",
-  "#bbbbbb",
-  "#cccccc",
+  "#3b82f6", /* blue-500 */
+  "#ef4444", /* red-500 */
+  "#22c55e", /* green-500 */
+  "#f59e0b", /* amber-500 */
+  "#8b5cf6", /* violet-500 */
+  "#06b6d4", /* cyan-500 */
+  "#ec4899", /* pink-500 */
+  "#f97316", /* orange-500 */
+  "#14b8a6", /* teal-500 */
+  "#6366f1", /* indigo-500 */
+  "#84cc16", /* lime-500 */
+  "#a855f7", /* purple-500 */
 ];
 
 function computeStringHash(str: string): number {
@@ -42,30 +43,30 @@ export function getStateColor(state: string): string {
   return CHART_PALETTE[Math.abs(computeStringHash(state)) % CHART_PALETTE.length];
 }
 
-/* Badge classes — monochrome ink system */
+/* Badge classes — tinted backgrounds matching state colors */
 const BADGE_CLASSES = [
-  "bg-ink/10 text-ink",
-  "bg-ink/8 text-ink",
-  "bg-ink/6 text-ink",
-  "bg-ink/5 text-ink",
-  "bg-secondary text-ink",
-  "bg-ink/12 text-ink",
-  "bg-ink/4 text-ink",
-  "bg-ink/7 text-ink",
-  "bg-ink/9 text-ink",
-  "bg-ink/3 text-ink",
+  "bg-blue-100 text-blue-800",
+  "bg-amber-100 text-amber-800",
+  "bg-emerald-100 text-emerald-800",
+  "bg-violet-100 text-violet-800",
+  "bg-slate-100 text-slate-800",
+  "bg-green-100 text-green-800",
+  "bg-red-100 text-red-800",
+  "bg-orange-100 text-orange-800",
+  "bg-rose-100 text-rose-800",
+  "bg-cyan-100 text-cyan-800",
 ];
 
 const NAMED_BADGES: Record<string, string> = {
-  INITIATED: BADGE_CLASSES[0],
-  AUTHENTICATING: BADGE_CLASSES[1],
-  DOWNLOADING: BADGE_CLASSES[2],
-  VERIFYING: BADGE_CLASSES[3],
-  INSTALLING: BADGE_CLASSES[4],
-  COMPLETED: BADGE_CLASSES[5],
-  FAILED: BADGE_CLASSES[6],
-  RETRYING: BADGE_CLASSES[7],
-  ABORTED: BADGE_CLASSES[8],
+  INITIATED: "bg-slate-100 text-slate-700",
+  AUTHENTICATING: "bg-blue-100 text-blue-800",
+  DOWNLOADING: "bg-sky-100 text-sky-800",
+  VERIFYING: "bg-violet-100 text-violet-800",
+  INSTALLING: "bg-emerald-100 text-emerald-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  FAILED: "bg-red-100 text-red-800",
+  RETRYING: "bg-amber-100 text-amber-800",
+  ABORTED: "bg-rose-100 text-rose-800",
 };
 
 export function getStateBadgeClass(state: string): string {

@@ -367,15 +367,15 @@ export default function Home() {
     }
   }, [toggleSeries]);
 
-  // Retry bar chart colors — Wired monochrome ink palette
+  // Retry bar chart colors — distinct chromatic palette
   const retryColors = [
-    "#000000",
-    "#1a1a1a",
-    "#333333",
-    "#4a4a4a",
-    "#555555",
-    "#6a6a6a",
-    "#757575",
+    "#3b82f6",
+    "#ef4444",
+    "#22c55e",
+    "#f59e0b",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
   ];
 
   /* ---------------------------------------------------------------- */
@@ -999,8 +999,8 @@ export default function Home() {
                         <Area
                           type="monotone"
                           dataKey="events"
-                          stroke="#000000"
-                          fill="#00000015"
+                          stroke="#3b82f6"
+                          fill="#3b82f615"
                           name="Total Events"
                           hide={hiddenSeries["events"]}
                           opacity={hiddenSeries["events"] ? 0 : undefined}
@@ -1008,8 +1008,8 @@ export default function Home() {
                         <Area
                           type="monotone"
                           dataKey="successes"
-                          stroke="#333333"
-                          fill="#33333315"
+                          stroke="#22c55e"
+                          fill="#22c55e15"
                           name="Successes"
                           hide={hiddenSeries["successes"]}
                           opacity={hiddenSeries["successes"] ? 0 : undefined}
@@ -1017,8 +1017,8 @@ export default function Home() {
                         <Area
                           type="monotone"
                           dataKey="failures"
-                          stroke="#757575"
-                          fill="#75757515"
+                          stroke="#ef4444"
+                          fill="#ef444415"
                           name="Failures"
                           hide={hiddenSeries["failures"]}
                           opacity={hiddenSeries["failures"] ? 0 : undefined}
@@ -1100,7 +1100,7 @@ export default function Home() {
                         <Bar
                           dataKey="count"
                           name="Failures"
-                          fill="#000000"
+                          fill="#ef4444"
                           radius={0}
                           opacity={0.85}
                         />
@@ -1163,7 +1163,7 @@ export default function Home() {
                         <Bar
                           dataKey="wasted_gb"
                           name={`Wasted (GB)`}
-                          fill="#333333"
+                          fill="#f59e0b"
                           radius={0}
                           opacity={hiddenSeries["wasted_gb"] ? 0 : 0.85}
                           hide={hiddenSeries["wasted_gb"]}

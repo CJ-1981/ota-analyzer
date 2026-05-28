@@ -97,12 +97,12 @@
   --body: #757575;
   --link: #057dbc;
 
-  /* Charts — monochrome ink palette */
-  --chart-1: #000000;
-  --chart-2: #333333;
-  --chart-3: #555555;
-  --chart-4: #888888;
-  --chart-5: #aaaaaa;
+  /* Charts — distinct chromatic palette */
+  --chart-1: #3b82f6;
+  --chart-2: #ef4444;
+  --chart-3: #22c55e;
+  --chart-4: #f59e0b;
+  --chart-5: #8b5cf6;
 
   /* Sidebar */
   --sidebar: #ffffff;
