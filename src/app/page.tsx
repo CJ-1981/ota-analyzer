@@ -741,8 +741,8 @@ export default function Home() {
           </Collapsible>
 
           {/* KPI Cards — magazine story-row style with hairline dividers */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-hairline border border-hairline">
-            <div className="p-4 gap-2">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-hairline border border-hairline">
+            <div className="p-4 gap-2 bg-background">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-xs font-bold uppercase tracking-wider">
                   Total {entityLabel}s
@@ -753,7 +753,7 @@ export default function Home() {
                 {(data.kpi.total_entities || data.kpi.total_vins).toLocaleString()}
               </div>
             </div>
-            <div className="p-4 gap-2">
+            <div className="p-4 gap-2 bg-background">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-xs font-bold uppercase tracking-wider">Total Retries</CardDescription>
                 <RotateCcw className="h-4 w-4 text-body" />
@@ -762,7 +762,7 @@ export default function Home() {
                 {data.kpi.total_retries.toLocaleString()}
               </div>
             </div>
-            <div className="p-4 gap-2">
+            <div className="p-4 gap-2 bg-background">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-xs font-bold uppercase tracking-wider">Success Rate</CardDescription>
                 <CheckCircle2 className="h-4 w-4 text-ink" />
@@ -771,7 +771,7 @@ export default function Home() {
                 {data.kpi.success_rate}%
               </div>
             </div>
-            <div className="p-4 gap-2">
+            <div className="p-4 gap-2 bg-background">
               <div className="flex items-center justify-between">
                 <CardDescription className="text-xs font-bold uppercase tracking-wider">{wasteLabel}</CardDescription>
                 <AlertTriangle className="h-4 w-4 text-ink" />

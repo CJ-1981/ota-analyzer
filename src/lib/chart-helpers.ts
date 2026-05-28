@@ -4,15 +4,15 @@
 
 /* Monochrome ink palette — no chromatic accents */
 export const STATE_COLORS: Record<string, string> = {
-  INITIATED: "#000000",
-  AUTHENTICATING: "#1a1a1a",
-  DOWNLOADING: "#333333",
-  VERIFYING: "#555555",
-  INSTALLING: "#757575",
-  COMPLETED: "#2a2a2a",
-  FAILED: "#000000",
+  INITIATED: "#cccccc",
+  AUTHENTICATING: "#bbbbbb",
+  DOWNLOADING: "#999999",
+  VERIFYING: "#757575",
+  INSTALLING: "#555555",
+  COMPLETED: "#000000",
+  FAILED: "#333333",
   RETRYING: "#4a4a4a",
-  ABORTED: "#3a3a3a",
+  ABORTED: "#8a8a8a",
 };
 
 export const CHART_PALETTE = [
