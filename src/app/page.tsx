@@ -602,25 +602,31 @@ export default function Home() {
     return ordered;
   }, [data, config.stateConfig.pipelineStates]);
 
-  // Cache normalized entries for demo mode (so filters don't re-fetch)
+  // Cache for demo mode
   const [cachedNormalized, setCachedNormalized] = useState<ReturnType<typeof normalizeData> | null>(null);
+  const [cachedAnalytics, setCachedAnalytics] = useState<Omit<AnalyticsResult, "filteredEntries"> | null>(null);
 
-  // Load demo data from static JSON, compute analytics client-side
+  // Load pre-computed analytics (fast, 68KB) and raw data for table
   useEffect(() => {
     if (mode !== "demo") return;
     setLoading(true);
-
     let cancelled = false;
 
     const loadDemo = async () => {
       try {
-        const res = await fetch("sample-logs.json");
-        const json = await res.json();
+        // Load pre-computed analytics first (fast)
+        const analyticsRes = await fetch("sample-analytics.json");
+        const analyticsJson = await analyticsRes.json();
+        if (cancelled) return;
+        setCachedAnalytics(analyticsJson);
+
+        // Load raw data for table in parallel
+        const logsRes = await fetch("sample-logs.json");
+        const logsJson = await logsRes.json();
         if (cancelled) return;
 
-        // Parse compact format: { h: headers, d: rows }
-        const headers = json.h as string[];
-        const rows = json.d as unknown[][];
+        const headers = logsJson.h as string[];
+        const rows = logsJson.d as unknown[][];
         const rawRows: RawDataRow[] = rows.map((row) => {
           const obj: RawDataRow = {};
           headers.forEach((h, i) => { obj[h] = row[i]; });
@@ -638,13 +644,12 @@ export default function Home() {
     };
 
     loadDemo();
-
     return () => { cancelled = true; };
-  }, [mode]); // Only re-fetch when mode changes, not when filters change
+  }, [mode]);
 
-  // Recompute analytics from cached normalized data when filters change
+  // Build full result from cached analytics + filtered entries from raw data
   useEffect(() => {
-    if (mode !== "demo" || !cachedNormalized) return;
+    if (mode !== "demo" || !cachedAnalytics || !cachedNormalized) return;
     setLoading(true);
 
     const timer = setTimeout(() => {
@@ -664,7 +669,7 @@ export default function Home() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [mode, cachedNormalized, entityFilter, stateFilter]);
+  }, [mode, cachedAnalytics, cachedNormalized, entityFilter, stateFilter]);
 
   // Run custom analysis (client-side)
   const runCustomAnalysis = useCallback(() => {
@@ -690,10 +695,10 @@ export default function Home() {
   }, [uploadedData, config, entityFilter, stateFilter]);
 
   const handleRegenerate = () => {
-    // Reset filters and reload the static sample data
     setEntityFilter([]);
     setStateFilter([]);
     setCachedNormalized(null);
+    setCachedAnalytics(null);
     setMode("demo");
     setLoading(true);
   };
