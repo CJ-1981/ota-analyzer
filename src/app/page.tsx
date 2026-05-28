@@ -210,6 +210,7 @@ export default function Home() {
         );
         setData(result);
         setPage(0);
+        setLoading(false);
       } catch (err) {
         console.error("Failed to compute analytics:", err);
       }
