@@ -384,9 +384,10 @@ function FlowDiagram({
             <Tooltip
               contentStyle={{
                 borderRadius: "8px",
-                border: "1px solid hsl(var(--border))",
-                background: "hsl(var(--background))",
-                color: "hsl(var(--foreground))",
+                border: "1px solid #e5e7eb",
+                background: "#ffffff",
+                color: "#1a1a1a",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
               }}
               formatter={(value: number, name: string) => [
                 `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
@@ -1552,9 +1553,10 @@ export default function Home() {
                         <Tooltip
                           contentStyle={{
                             borderRadius: "8px",
-                            border: "1px solid hsl(var(--border))",
-                            background: "hsl(var(--background))",
-                            color: "hsl(var(--foreground))",
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            color: "#1a1a1a",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                           }}
                           formatter={(value: number) => [
                             `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
@@ -1600,9 +1602,10 @@ export default function Home() {
                         <Tooltip
                           contentStyle={{
                             borderRadius: "8px",
-                            border: "1px solid hsl(var(--border))",
-                            background: "hsl(var(--background))",
-                            color: "hsl(var(--foreground))",
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            color: "#1a1a1a",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                           }}
                         />
                         <Legend />
@@ -1864,9 +1867,10 @@ export default function Home() {
                         <Tooltip
                           contentStyle={{
                             borderRadius: "8px",
-                            border: "1px solid hsl(var(--border))",
-                            background: "hsl(var(--background))",
-                            color: "hsl(var(--foreground))",
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            color: "#1a1a1a",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                           }}
                           formatter={(value: number) => [
                             `${value} failures`,
@@ -1921,9 +1925,10 @@ export default function Home() {
                         <Tooltip
                           contentStyle={{
                             borderRadius: "8px",
-                            border: "1px solid hsl(var(--border))",
-                            background: "hsl(var(--background))",
-                            color: "hsl(var(--foreground))",
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            color: "#1a1a1a",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                           }}
                           formatter={(value: number, name: string) => {
                             if (name === "wasted_gb")
