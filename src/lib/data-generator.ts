@@ -49,14 +49,6 @@ const NORMAL_FLOW = [
   "COMPLETED",
 ];
 
-// Map state -> state it returns to after retry
-const RETRY_RETURN_STATE: Record<string, string> = {
-  DOWNLOADING: "DOWNLOADING",
-  VERIFYING: "VERIFYING",
-  INSTALLING: "INSTALLING",
-  AUTHENTICATING: "AUTHENTICATING",
-};
-
 function generateVehiclePath(
   rng: () => number,
   vehicleId: string
@@ -104,16 +96,16 @@ function generateVehiclePath(
         : null;
 
     for (const s of NORMAL_FLOW) {
+      if (s === "COMPLETED" && !willFail && !willAbort) {
+        states.push({ state: "COMPLETED", progress: 100, condition: null });
+        return { vehicle_id: vehicleId, states };
+      }
+
       states.push({
         state: s,
         progress: s === "DOWNLOADING" || s === "INSTALLING" ? failProgress : 0,
         condition: null,
       });
-
-      if (s === "COMPLETED" && !willFail && !willAbort) {
-        states.push({ state: "COMPLETED", progress: 100, condition: null });
-        return { vehicle_id: vehicleId, states };
-      }
 
       if (willAbort && s === "DOWNLOADING") {
         const abortProgress = Math.floor(rng() * 10) * 5; // 0-45%

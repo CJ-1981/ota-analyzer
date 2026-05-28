@@ -15,9 +15,7 @@ const rawData = generateData(seed, dataSizeMB);
 // 1. Compact raw data for table filtering/sorting
 const headers = ["vehicle_id", "timestamp", "state", "progress", "package_size_mb", "condition"];
 const compactRows: unknown[][] = rawData.map((e) => {
-  const row: unknown[] = [e.vehicle_id, e.timestamp, e.state, e.progress, e.package_size_mb];
-  if (e.condition) row.push(e.condition);
-  return row;
+  return [e.vehicle_id, e.timestamp, e.state, e.progress, e.package_size_mb, e.condition ?? ""];
 });
 const sampleLogs = { h: headers, d: compactRows };
 

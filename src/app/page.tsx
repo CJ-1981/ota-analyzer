@@ -12,8 +12,6 @@ import {
   AlertTriangle,
   Car,
   CheckCircle2,
-  TrendingDown,
-  Clock,
   Upload,
   FileSpreadsheet,
   Settings,
@@ -81,12 +79,14 @@ import type {
 } from "@/lib/types";
 import { DEFAULT_OTA_CONFIG } from "@/lib/types";
 import { parseFile, autoDetectColumns, normalizeData } from "@/lib/data-parser";
-import { generateData } from "@/lib/data-generator";
-import { computeAnalytics, type AnalyticsResult } from "@/lib/analytics";
+import { computeAnalytics } from "@/lib/analytics";
+import { generateReportHtml } from "@/lib/report-generator";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
+type SortKey = "entity_id" | "timestamp" | "state" | "progress" | "attempt_id" | "condition";
+
 type EnrichedEntry = {
   entity_id: string;
   vehicle_id: string;
@@ -125,6 +125,17 @@ type AnalyticsData = {
   uniqueEntityList: string[];
   uniqueVinList: string[];
   uniqueStates: string[];
+};
+
+/* ------------------------------------------------------------------ */
+/*  Tooltip dark-mode compatible style                                 */
+/* ------------------------------------------------------------------ */
+const TOOLTIP_CONTENT_STYLE = {
+  borderRadius: "8px",
+  border: "1px solid var(--border, #e5e7eb)",
+  background: "var(--popover, #ffffff)",
+  color: "var(--popover-foreground, #1a1a1a)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
 };
 
 /* ------------------------------------------------------------------ */
@@ -265,6 +276,7 @@ function TagInput({
                   onClick={() => moveTag(idx, -1)}
                   className="hover:bg-black/10 rounded p-0.5"
                   disabled={idx === 0}
+                  aria-label="Move up"
                 >
                   <ArrowUp className="h-3 w-3" />
                 </button>
@@ -273,6 +285,7 @@ function TagInput({
                   onClick={() => moveTag(idx, 1)}
                   className="hover:bg-black/10 rounded p-0.5"
                   disabled={idx === values.length - 1}
+                  aria-label="Move down"
                 >
                   <ArrowDown className="h-3 w-3" />
                 </button>
@@ -283,6 +296,7 @@ function TagInput({
               type="button"
               onClick={() => removeTag(idx)}
               className="hover:bg-black/10 rounded p-0.5 ml-0.5"
+              aria-label={`Remove ${v}`}
             >
               <X className="h-3 w-3" />
             </button>
@@ -382,13 +396,7 @@ function FlowDiagram({
               tick={{ fontSize: 11 }}
             />
             <Tooltip
-              contentStyle={{
-                borderRadius: "8px",
-                border: "1px solid #e5e7eb",
-                background: "#ffffff",
-                color: "#1a1a1a",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              }}
+              contentStyle={TOOLTIP_CONTENT_STYLE}
               formatter={(value: number, name: string) => [
                 `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
                 `→ ${name}`,
@@ -528,44 +536,59 @@ function ColumnMappingSelector({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Sort Icon Helper                                                  */
+/* ------------------------------------------------------------------ */
+function SortIcon({ column, sortKey, sortDir }: { column: SortKey; sortKey: SortKey | null; sortDir: "asc" | "desc" }) {
+  if (sortKey === column) {
+    return sortDir === "asc"
+      ? <ArrowUp className="h-3 w-3" />
+      : <ArrowDown className="h-3 w-3" />;
+  }
+  return <ArrowUpDown className="h-3 w-3 opacity-30" />;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main Dashboard                                                     */
 /* ------------------------------------------------------------------ */
 export default function Home() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [seed, setSeed] = useState(42);
+  const [computing, setComputing] = useState(false);
   const [entityFilter, setEntityFilter] = useState<string[]>([]);
   const [stateFilter, setStateFilter] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
   // Table column sort & filter
-  type SortKey = "entity_id" | "timestamp" | "state" | "progress" | "attempt_id" | "condition";
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [colFilters, setColFilters] = useState<Record<SortKey, string>>({
+  const [colTextFilters, setColTextFilters] = useState<Record<string, string>>({
     entity_id: "",
     timestamp: "",
-    state: "",
     progress: "",
     attempt_id: "",
-    condition: "",
   });
+  const [colStateFilter, setColStateFilter] = useState<string[]>([]);
+  const [colConditionFilter, setColConditionFilter] = useState<string[]>([]);
 
   const handleSort = useCallback((key: SortKey) => {
-    setSortKey((prev) => {
-      if (prev === key) {
-        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-        return key;
+    if (sortKey === key) {
+      if (sortDir === "asc") {
+        setSortDir("desc");
+      } else {
+        // Third click: reset to original order
+        setSortKey(null);
+        setSortDir("asc");
       }
+    } else {
+      setSortKey(key);
       setSortDir("asc");
-      return key;
-    });
+    }
     setPage(0);
-  }, []);
+  }, [sortKey, sortDir]);
 
-  const handleColFilter = useCallback((key: SortKey, value: string) => {
-    setColFilters((prev) => ({ ...prev, [key]: value }));
+  const handleColTextFilter = useCallback((key: string, value: string) => {
+    setColTextFilters((prev) => ({ ...prev, [key]: value }));
     setPage(0);
   }, []);
 
@@ -577,7 +600,6 @@ export default function Home() {
     stateConfig: { ...DEFAULT_OTA_CONFIG.stateConfig },
     columnMapping: { ...DEFAULT_OTA_CONFIG.columnMapping },
   });
-  const [dataSizeMB, setDataSizeMB] = useState<number>(450);
   const [uploadedData, setUploadedData] = useState<RawDataRow[] | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
@@ -593,9 +615,6 @@ export default function Home() {
   // All known states for flow diagram ordering
   const allKnownStates = useMemo(() => {
     if (!data) return config.stateConfig.pipelineStates;
-    const stateSet = new Set<string>();
-    for (const s of data.uniqueStates) stateSet.add(s);
-    // Ensure pipeline states are first, then any extra states
     const ordered = [...config.stateConfig.pipelineStates];
     for (const s of data.uniqueStates) {
       if (!ordered.includes(s)) ordered.push(s);
@@ -605,25 +624,17 @@ export default function Home() {
 
   // Cache for demo mode
   const [cachedNormalized, setCachedNormalized] = useState<ReturnType<typeof normalizeData> | null>(null);
-  const [cachedAnalytics, setCachedAnalytics] = useState<Omit<AnalyticsResult, "filteredEntries"> | null>(null);
-  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   // Load pre-computed analytics (fast, 68KB) and raw data for table
   useEffect(() => {
     if (mode !== "demo") return;
-    if (fetchTrigger === 0 && cachedNormalized) return; // already loaded
-    setLoading(true);
+    if (cachedNormalized) return;
     let cancelled = false;
 
     const loadDemo = async () => {
+      setLoading(true);
       try {
-        // Load pre-computed analytics first (fast)
-        const analyticsRes = await fetch("sample-analytics.json");
-        const analyticsJson = await analyticsRes.json();
-        if (cancelled) return;
-        setCachedAnalytics(analyticsJson);
-
-        // Load raw data for table in parallel
+        // Load raw data for table
         const logsRes = await fetch("sample-logs.json");
         const logsJson = await logsRes.json();
         if (cancelled) return;
@@ -648,14 +659,14 @@ export default function Home() {
 
     loadDemo();
     return () => { cancelled = true; };
-  }, [mode, fetchTrigger]);
+  }, [mode, cachedNormalized]);
 
-  // Build full result from cached analytics + filtered entries from raw data
+  // Build full result from cached data with filters
   useEffect(() => {
-    if (mode !== "demo" || !cachedAnalytics || !cachedNormalized) return;
-    setLoading(true);
+    if (mode !== "demo" || !cachedNormalized) return;
 
     const timer = setTimeout(() => {
+      setComputing(true);
       try {
         const result = computeAnalytics(
           cachedNormalized,
@@ -668,16 +679,16 @@ export default function Home() {
       } catch (err) {
         console.error("Failed to compute analytics:", err);
       }
-      setLoading(false);
+      setComputing(false);
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [mode, cachedAnalytics, cachedNormalized, entityFilter, stateFilter]);
+  }, [mode, cachedNormalized, entityFilter, stateFilter]);
 
   // Run custom analysis (client-side)
   const runCustomAnalysis = useCallback(() => {
     if (!uploadedData) return;
-    setLoading(true);
+    setComputing(true);
 
     setTimeout(() => {
       try {
@@ -693,7 +704,7 @@ export default function Home() {
       } catch (err) {
         console.error("Failed to run custom analysis:", err);
       }
-      setLoading(false);
+      setComputing(false);
     }, 0);
   }, [uploadedData, config, entityFilter, stateFilter]);
 
@@ -701,14 +712,14 @@ export default function Home() {
     // Data is pre-computed and static — just reset all filters/views
     setEntityFilter([]);
     setStateFilter([]);
-    setColFilters({
+    setColTextFilters({
       entity_id: "",
       timestamp: "",
-      state: "",
       progress: "",
       attempt_id: "",
-      condition: "",
     });
+    setColStateFilter([]);
+    setColConditionFilter([]);
     setSortKey(null);
     setSortDir("asc");
     setPage(0);
@@ -778,7 +789,17 @@ export default function Home() {
     });
     setEntityFilter([]);
     setStateFilter([]);
-    setSeed(42);
+    setColTextFilters({
+      entity_id: "",
+      timestamp: "",
+      progress: "",
+      attempt_id: "",
+    });
+    setColStateFilter([]);
+    setColConditionFilter([]);
+    setSortKey(null);
+    setSortDir("asc");
+    setPage(0);
     setLoading(true);
   };
 
@@ -793,13 +814,18 @@ export default function Home() {
     }));
   };
 
-  // Paginated entries
-  // Table entries: filtered by column text, sorted, then paginated
+  // Condition options for multi-select
+  const conditionOptions = useMemo(() => {
+    if (!data) return [];
+    return data.wastedByCondition.map((w) => w.condition);
+  }, [data]);
+
+  // Table entries: filtered by column text/multi-select, sorted, then paginated
   const tableFilteredEntries = useMemo(() => {
     if (!data) return [];
     let entries = data.filteredEntries;
     // Apply per-column text filters
-    for (const [key, filterText] of Object.entries(colFilters)) {
+    for (const [key, filterText] of Object.entries(colTextFilters)) {
       const trimmed = filterText.trim().toLowerCase();
       if (!trimmed) continue;
       entries = entries.filter((entry) => {
@@ -807,8 +833,18 @@ export default function Home() {
         return val.includes(trimmed);
       });
     }
+    // Multi-select state filter
+    if (colStateFilter.length > 0) {
+      const stateSet = new Set(colStateFilter);
+      entries = entries.filter((entry) => stateSet.has(entry.state));
+    }
+    // Multi-select condition filter
+    if (colConditionFilter.length > 0) {
+      const condSet = new Set(colConditionFilter);
+      entries = entries.filter((entry) => entry.condition !== null && entry.condition !== undefined && condSet.has(entry.condition));
+    }
     return entries;
-  }, [data, colFilters]);
+  }, [data, colTextFilters, colStateFilter, colConditionFilter]);
 
   const tableSortedEntries = useMemo(() => {
     if (!tableFilteredEntries.length) return tableFilteredEntries;
@@ -849,133 +885,14 @@ export default function Home() {
   /* ---------------------------------------------------------------- */
   /*  Download HTML Report                                              */
   /* ---------------------------------------------------------------- */
-  const downloadReport = async () => {
+  const downloadReport = () => {
     if (!data) return;
-    const entityLabelHtml = entityLabel;
-    const entityListKey = isCustom ? "entity_id" : "vehicle_id";
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<title>Multi-State Log Analysis Report</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f8f8; color: #1a1a1a; padding: 2rem; }
-  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.15rem; margin-top: 2rem; margin-bottom: 1rem; color: #333; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.5rem; }
-  .subtitle { color: #666; margin-bottom: 1.5rem; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
-  .kpi-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .kpi-label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
-  .kpi-value { font-size: 1.75rem; font-weight: 700; margin-top: 0.25rem; }
-  .kpi-value.green { color: #10b981; }
-  .kpi-value.amber { color: #f59e0b; }
-  table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  th, td { padding: 0.6rem 0.8rem; text-align: left; border-bottom: 1px solid #eee; font-size: 0.85rem; }
-  th { background: #f5f5f5; font-weight: 600; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
-  .badge-success { background: #d1fae5; color: #065f46; }
-  .badge-danger { background: #fee2e2; color: #991b1b; }
-  .badge-warning { background: #fef3c7; color: #92400e; }
-  .footer { margin-top: 2rem; color: #999; font-size: 0.8rem; }
-</style>
-</head>
-<body>
-<h1>Multi-State Log Analysis & Visualization</h1>
-<p class="subtitle">${entityLabelHtml} Analytics Report — Generated ${new Date().toISOString()}</p>
-
-<h2>Key Metrics</h2>
-<div class="kpi-grid">
-  <div class="kpi-card">
-    <div class="kpi-label">Total ${entityLabelHtml}s</div>
-    <div class="kpi-value">${data.kpi.total_entities.toLocaleString()}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Total Retries</div>
-    <div class="kpi-value">${data.kpi.total_retries.toLocaleString()}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Success Rate</div>
-    <div class="kpi-value green">${data.kpi.success_rate}%</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">${wasteLabel}</div>
-    <div class="kpi-value amber">${data.kpi.wasted_data_gb} GB</div>
-  </div>
-</div>
-
-<h2>Pipeline Funnel</h2>
-<table>
-  <tr><th>Stage</th><th>${entityLabelHtml}s</th><th>Drop-off</th><th>Drop-off %</th></tr>
-  ${data.funnel
-    .map(
-      (f) =>
-        `<tr><td>${f.stage}</td><td>${f.count.toLocaleString()}</td><td>${f.dropoff > 0 ? f.dropoff.toLocaleString() : "—"}</td><td>${f.dropoff_pct > 0 ? f.dropoff_pct + "%" : "—"}</td></tr>`
-    )
-    .join("")}
-</table>
-
-<h2>Retry Distribution</h2>
-<table>
-  <tr><th># Attempts</th><th>${entityLabelHtml}s</th></tr>
-  ${data.retryDistribution
-    .map(
-      (r) =>
-        `<tr><td>${r.attempts}</td><td>${r.count.toLocaleString()}</td></tr>`
-    )
-    .join("")}
-</table>
-
-<h2>${wasteLabel} by Condition</h2>
-<table>
-  <tr><th>Condition</th><th>Wasted (GB)</th><th>Count</th></tr>
-  ${data.wastedByCondition
-    .map(
-      (w) =>
-        `<tr><td>${w.condition}</td><td>${w.wasted_gb}</td><td>${w.count.toLocaleString()}</td></tr>`
-    )
-    .join("")}
-</table>
-
-<h2>Failure Progress Distribution</h2>
-<table>
-  <tr><th>Progress Range</th><th>Count</th></tr>
-  ${data.failureProgressBuckets
-    .map((b) => `<tr><td>${b.range}</td><td>${b.count}</td></tr>`)
-    .join("")}
-</table>
-
-<h2>Time Series (Daily Events)</h2>
-<table>
-  <tr><th>Date</th><th>Total Events</th><th>Successes</th><th>Failures</th></tr>
-  ${data.timeSeries
-    .map(
-      (t) =>
-        `<tr><td>${t.date}</td><td>${t.events.toLocaleString()}</td><td>${t.successes.toLocaleString()}</td><td>${t.failures.toLocaleString()}</td></tr>`
-    )
-    .join("")}
-</table>
-
-<h2>Top 100 Log Entries</h2>
-<table>
-  <tr><th>${entityLabelHtml} ID</th><th>Timestamp</th><th>State</th><th>Progress</th><th>Attempt</th><th>Condition</th></tr>
-  ${data.filteredEntries
-    .slice(0, 100)
-    .map(
-      (e) =>
-        `<tr><td>${e[entityListKey] || e.entity_id}</td><td>${e.timestamp}</td><td>${e.state}</td><td>${e.progress}%</td><td>${e.attempt_id}</td><td>${e.condition || "—"}</td></tr>`
-    )
-    .join("")}
-</table>
-
-<p class="footer">Report generated by Multi-State Log Analyzer. Total log entries: ${data.filteredEntries.length.toLocaleString()}.</p>
-</body>
-</html>`;
+    const html = generateReportHtml(data, entityLabel, wasteLabel, isCustom);
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `analytics-report-${seed}.html`;
+    a.download = `analytics-report-42.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -1033,6 +950,14 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 px-4 py-6 md:px-8">
         <div className="max-w-7xl mx-auto space-y-6">
+          {/* Computing overlay */}
+          {computing && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Recomputing analytics...
+            </div>
+          )}
+
           {/* Configuration Panel */}
           <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
             <div className="flex items-center gap-2">
@@ -1091,30 +1016,6 @@ export default function Home() {
                       </Label>
                     </div>
                   </RadioGroup>
-
-                  {mode === "demo" && (
-                    <div className="flex items-end gap-3">
-                      <div className="flex-1 max-w-[200px] space-y-1">
-                        <Label className="text-xs text-muted-foreground">
-                          OTA Package Size (MB)
-                        </Label>
-                        <Input
-                          type="number"
-                          value={dataSizeMB}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            if (!isNaN(val) && val > 0) setDataSizeMB(val);
-                          }}
-                          className="h-8 text-xs"
-                          min={1}
-                          step={10}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground pb-2">
-                        Simulate different OTA package sizes — affects bandwidth &amp; waste metrics
-                      </p>
-                    </div>
-                  )}
 
                   {mode === "custom" && (
                     <div className="space-y-3">
@@ -1474,7 +1375,7 @@ export default function Home() {
                     options={entityOptions}
                     selected={entityFilter}
                     onChange={(val) => {
-                      setLoading(true);
+                      setComputing(true);
                       setEntityFilter(val);
                     }}
                     placeholder={`All ${entityLabel}s`}
@@ -1485,7 +1386,7 @@ export default function Home() {
                     options={data.uniqueStates}
                     selected={stateFilter}
                     onChange={(val) => {
-                      setLoading(true);
+                      setComputing(true);
                       setStateFilter(val);
                     }}
                     placeholder="All States"
@@ -1497,7 +1398,7 @@ export default function Home() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setLoading(true);
+                        setComputing(true);
                         setEntityFilter([]);
                         setStateFilter([]);
                       }}
@@ -1551,13 +1452,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip
-                          contentStyle={{
-                            borderRadius: "8px",
-                            border: "1px solid #e5e7eb",
-                            background: "#ffffff",
-                            color: "#1a1a1a",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                          }}
+                          contentStyle={TOOLTIP_CONTENT_STYLE}
                           formatter={(value: number) => [
                             `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
                             entityLabel + "s",
@@ -1600,13 +1495,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip
-                          contentStyle={{
-                            borderRadius: "8px",
-                            border: "1px solid #e5e7eb",
-                            background: "#ffffff",
-                            color: "#1a1a1a",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                          }}
+                          contentStyle={TOOLTIP_CONTENT_STYLE}
                         />
                         <Legend />
                         <Area
@@ -1659,40 +1548,64 @@ export default function Home() {
                       <TableHeader>
                         {/* Sortable column headers */}
                         <TableRow>
-                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("entity_id")}>
+                          <TableHead
+                            className="cursor-pointer select-none"
+                            onClick={() => handleSort("entity_id")}
+                            aria-sort={sortKey === "entity_id" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                          >
                             <span className="inline-flex items-center gap-1">
                               {entityLabel} ID
-                              {sortKey === "entity_id" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                              <SortIcon column="entity_id" sortKey={sortKey} sortDir={sortDir} />
                             </span>
                           </TableHead>
-                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("timestamp")}>
+                          <TableHead
+                            className="cursor-pointer select-none"
+                            onClick={() => handleSort("timestamp")}
+                            aria-sort={sortKey === "timestamp" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                          >
                             <span className="inline-flex items-center gap-1">
                               Timestamp
-                              {sortKey === "timestamp" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                              <SortIcon column="timestamp" sortKey={sortKey} sortDir={sortDir} />
                             </span>
                           </TableHead>
-                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("state")}>
+                          <TableHead
+                            className="cursor-pointer select-none"
+                            onClick={() => handleSort("state")}
+                            aria-sort={sortKey === "state" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                          >
                             <span className="inline-flex items-center gap-1">
                               State
-                              {sortKey === "state" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                              <SortIcon column="state" sortKey={sortKey} sortDir={sortDir} />
                             </span>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("progress")}>
+                          <TableHead
+                            className="text-right cursor-pointer select-none"
+                            onClick={() => handleSort("progress")}
+                            aria-sort={sortKey === "progress" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                          >
                             <span className="inline-flex items-center gap-1 justify-end">
                               {progressLabel}
-                              {sortKey === "progress" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                              <SortIcon column="progress" sortKey={sortKey} sortDir={sortDir} />
                             </span>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer select-none" onClick={() => handleSort("attempt_id")}>
+                          <TableHead
+                            className="text-right cursor-pointer select-none"
+                            onClick={() => handleSort("attempt_id")}
+                            aria-sort={sortKey === "attempt_id" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                          >
                             <span className="inline-flex items-center gap-1 justify-end">
                               Attempt
-                              {sortKey === "attempt_id" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                              <SortIcon column="attempt_id" sortKey={sortKey} sortDir={sortDir} />
                             </span>
                           </TableHead>
-                          <TableHead className="cursor-pointer select-none" onClick={() => handleSort("condition")}>
+                          <TableHead
+                            className="cursor-pointer select-none"
+                            onClick={() => handleSort("condition")}
+                            aria-sort={sortKey === "condition" ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                          >
                             <span className="inline-flex items-center gap-1">
                               Condition
-                              {sortKey === "condition" ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}
+                              <SortIcon column="condition" sortKey={sortKey} sortDir={sortDir} />
                             </span>
                           </TableHead>
                         </TableRow>
@@ -1701,49 +1614,57 @@ export default function Home() {
                           <TableHead className="p-1">
                             <Input
                               placeholder={`Search ${entityLabel.toLowerCase()}…`}
-                              value={colFilters.entity_id}
-                              onChange={(e) => handleColFilter("entity_id", e.target.value)}
+                              value={colTextFilters.entity_id}
+                              onChange={(e) => handleColTextFilter("entity_id", e.target.value)}
                               className="h-7 text-xs"
                             />
                           </TableHead>
                           <TableHead className="p-1">
                             <Input
                               placeholder="Search time…"
-                              value={colFilters.timestamp}
-                              onChange={(e) => handleColFilter("timestamp", e.target.value)}
+                              value={colTextFilters.timestamp}
+                              onChange={(e) => handleColTextFilter("timestamp", e.target.value)}
                               className="h-7 text-xs"
                             />
                           </TableHead>
                           <TableHead className="p-1">
-                            <Input
-                              placeholder="Search state…"
-                              value={colFilters.state}
-                              onChange={(e) => handleColFilter("state", e.target.value)}
-                              className="h-7 text-xs"
+                            <MultiSelect
+                              options={data.uniqueStates}
+                              selected={colStateFilter}
+                              onChange={(val) => {
+                                setColStateFilter(val);
+                                setPage(0);
+                              }}
+                              placeholder="All States"
+                              className="min-w-[120px]"
                             />
                           </TableHead>
                           <TableHead className="p-1">
                             <Input
                               placeholder="Search…"
-                              value={colFilters.progress}
-                              onChange={(e) => handleColFilter("progress", e.target.value)}
+                              value={colTextFilters.progress}
+                              onChange={(e) => handleColTextFilter("progress", e.target.value)}
                               className="h-7 text-xs ml-auto w-20"
                             />
                           </TableHead>
                           <TableHead className="p-1">
                             <Input
                               placeholder="Search…"
-                              value={colFilters.attempt_id}
-                              onChange={(e) => handleColFilter("attempt_id", e.target.value)}
+                              value={colTextFilters.attempt_id}
+                              onChange={(e) => handleColTextFilter("attempt_id", e.target.value)}
                               className="h-7 text-xs ml-auto w-20"
                             />
                           </TableHead>
                           <TableHead className="p-1">
-                            <Input
-                              placeholder="Search…"
-                              value={colFilters.condition}
-                              onChange={(e) => handleColFilter("condition", e.target.value)}
-                              className="h-7 text-xs"
+                            <MultiSelect
+                              options={conditionOptions}
+                              selected={colConditionFilter}
+                              onChange={(val) => {
+                                setColConditionFilter(val);
+                                setPage(0);
+                              }}
+                              placeholder="All Conditions"
+                              className="min-w-[120px]"
                             />
                           </TableHead>
                         </TableRow>
@@ -1865,13 +1786,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip
-                          contentStyle={{
-                            borderRadius: "8px",
-                            border: "1px solid #e5e7eb",
-                            background: "#ffffff",
-                            color: "#1a1a1a",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                          }}
+                          contentStyle={TOOLTIP_CONTENT_STYLE}
                           formatter={(value: number) => [
                             `${value} failures`,
                             "Count",
@@ -1923,13 +1838,7 @@ export default function Home() {
                           width={110}
                         />
                         <Tooltip
-                          contentStyle={{
-                            borderRadius: "8px",
-                            border: "1px solid #e5e7eb",
-                            background: "#ffffff",
-                            color: "#1a1a1a",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                          }}
+                          contentStyle={TOOLTIP_CONTENT_STYLE}
                           formatter={(value: number, name: string) => {
                             if (name === "wasted_gb")
                               return [`${value} GB`, wasteLabel];
@@ -2022,7 +1931,7 @@ export default function Home() {
           <span>
             {isCustom
               ? `${uploadedData?.length.toLocaleString()} entries loaded`
-              : `Seed: ${seed}`}
+              : "Seed: 42"}
           </span>
         </div>
       </footer>
@@ -2034,8 +1943,6 @@ export default function Home() {
 /*  Helper: auto-runs custom analysis when filters change               */
 /* ------------------------------------------------------------------ */
 function FilterRunner({
-  entityFilter,
-  stateFilter,
   runCustomAnalysis,
 }: {
   entityFilter: string[];
@@ -2044,7 +1951,7 @@ function FilterRunner({
 }) {
   useEffect(() => {
     runCustomAnalysis();
-    // runCustomAnalysis intentionally omitted from deps to avoid infinite loop
-  }, [entityFilter, stateFilter, runCustomAnalysis]);
+  }, [entityFilter, stateFilter]);
+
   return null;
 }

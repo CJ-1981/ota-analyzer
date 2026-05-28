@@ -1,4 +1,5 @@
 import type { NormalizedEntry, StateConfig } from "./types";
+import { DEFAULT_OTA_CONFIG } from "./types";
 
 export type EnrichedEntry = NormalizedEntry & {
   attempt_id: number;
@@ -67,23 +68,8 @@ export type AnalyticsResult = {
   uniqueStates: string[];
 };
 
-// Default config for backward compatibility with GET endpoint
-const DEFAULT_CONFIG: StateConfig = {
-  pipelineStates: [
-    "INITIATED",
-    "AUTHENTICATING",
-    "DOWNLOADING",
-    "VERIFYING",
-    "INSTALLING",
-    "COMPLETED",
-  ],
-  successStates: ["COMPLETED"],
-  failureStates: ["FAILED", "ABORTED"],
-  retryStates: ["RETRYING"],
-  entityLabel: "Vehicle",
-  progressLabel: "Progress",
-  wasteLabel: "Data Wasted",
-};
+// Use centralized default config
+const DEFAULT_CONFIG = DEFAULT_OTA_CONFIG.stateConfig;
 
 // Assign attempt_id: increment per entity, reset on retry states
 function enrichEntries(
