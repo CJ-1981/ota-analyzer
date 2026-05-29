@@ -527,6 +527,7 @@ export default function Home() {
                             const val = parseFloat(e.target.value);
                             if (!isNaN(val) && val > 0) setDataSizeMB(val);
                           }}
+                          onFocus={(e) => e.target.select()}
                           className="h-8 text-xs"
                           min={1}
                           step={10}
