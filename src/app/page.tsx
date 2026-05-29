@@ -810,7 +810,7 @@ export default function Home() {
 
           {/* Tabs */}
           <Tabs defaultValue="system" className="space-y-4">
-            <TabsList className="flex-wrap">
+            <TabsList className="overflow-x-auto">
               <TabsTrigger value="system" className="gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" />
                 System Analytics

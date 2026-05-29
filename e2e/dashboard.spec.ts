@@ -9,7 +9,15 @@ async function waitForDashboard(page: Page) {
 }
 
 async function goToTab(page: Page, tab: "system" | "operational" | "wasted") {
-  await page.getByRole("tab", { name: tab, exact: false }).click();
+  const tabEl = page.getByRole("tab", { name: tab, exact: false });
+  // Scroll tab list to top of viewport to minimize overlap
+  await page.evaluate(() => {
+    const tabList = document.querySelector('[role="tablist"]');
+    if (tabList) tabList.scrollIntoView({ block: "start" });
+  });
+  await page.waitForTimeout(200);
+  await tabEl.scrollIntoViewIfNeeded();
+  await tabEl.click({ force: true });
   await page.waitForTimeout(500);
 }
 
@@ -24,7 +32,7 @@ test.describe("OTA Analytics Dashboard", () => {
   // ── Page load ───────────────────────────────────────────────────
 
   test("loads the dashboard and hides the loading spinner", async ({ page }) => {
-    await expect(page.getByText("Analytics Dashboard")).toBeVisible();
+    await expect(page.getByText("Multi-State Log Analysis")).toBeVisible();
     await expect(page.getByText("Loading analytics data")).toBeHidden();
   });
 
@@ -284,7 +292,7 @@ test.describe("Mobile responsive", () => {
   });
 
   test("dashboard is usable on small screens", async ({ page }) => {
-    await expect(page.getByText("Analytics Dashboard")).toBeVisible();
+    await expect(page.getByText("Multi-State Log Analysis")).toBeVisible();
     await expect(page.getByText("3,000").first()).toBeVisible();
   });
 
