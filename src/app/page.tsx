@@ -129,6 +129,7 @@ export default function Home() {
 
   // Config mode
   const [mode, setMode] = useState<"demo" | "custom">("demo");
+  const [dataSizeMB, setDataSizeMB] = useState<number>(450);
   const [configOpen, setConfigOpen] = useState(false);
   const [config, setConfig] = useState<AnalyzerConfig>({
     ...DEFAULT_OTA_CONFIG,
@@ -512,6 +513,30 @@ export default function Home() {
                       </Label>
                     </div>
                   </RadioGroup>
+
+                  {mode === "demo" && (
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1 max-w-[200px] space-y-1">
+                        <Label className="text-xs text-body font-bold uppercase tracking-wider">
+                          OTA Package Size (MB)
+                        </Label>
+                        <Input
+                          type="number"
+                          value={dataSizeMB}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val) && val > 0) setDataSizeMB(val);
+                          }}
+                          className="h-8 text-xs"
+                          min={1}
+                          step={10}
+                        />
+                      </div>
+                      <p className="text-xs text-body pb-2">
+                        Simulate different OTA package sizes — affects bandwidth and waste metrics
+                      </p>
+                    </div>
+                  )}
 
                   {mode === "custom" && (
                     <div className="space-y-3">
