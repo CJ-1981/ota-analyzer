@@ -1359,8 +1359,8 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer Band — Wired near-black footer */}
-      <footer className="bg-ink px-4 py-6 md:px-8 mt-auto">
+      {/* Footer Band — Wired near-black footer (fixed dark in both themes) */}
+      <footer className="bg-[#111111] px-4 py-6 md:px-8 mt-auto">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-white/70 font-bold uppercase tracking-wider">
           <span className="font-display text-sm text-white tracking-tight normal-case">
             Multi-State Log Analyzer
