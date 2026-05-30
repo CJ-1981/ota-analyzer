@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { useMemo, useCallback, useState, useRef, useEffect } from "react";
+import { ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -395,7 +395,7 @@ export function DataTable({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between pt-4 border-t border-hairline">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-hairline gap-3">
           <p className="text-xs text-body font-bold uppercase tracking-wider">
             Showing{" "}
             {tableSortedEntries.length > 0 ? page * pageSize + 1 : 0}–
@@ -406,26 +406,178 @@ export function DataTable({
             of{" "}
             {tableSortedEntries.length.toLocaleString()}
           </p>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => onPage(page - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= tableTotalPages - 1}
-              onClick={() => onPage(page + 1)}
-            >
-              Next
-            </Button>
+          <div className="flex items-center gap-2">
+            <PageSelector
+              totalPages={tableTotalPages}
+              currentPage={page}
+              onSelect={onPage}
+            />
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page Selector with first/prev/page-jump/next/last                    */
+/* ------------------------------------------------------------------ */
+function PageSelector({
+  totalPages,
+  currentPage,
+  onSelect,
+}: {
+  totalPages: number;
+  currentPage: number;
+  onSelect: (page: number) => void;
+}) {
+  const [inputVal, setInputVal] = useState(String(currentPage + 1));
+
+  // Sync input when external page changes
+  useEffect(() => {
+    setInputVal(String(currentPage + 1));
+  }, [currentPage]);
+
+  const jumpToPage = useCallback(
+    (target: number) => {
+      const clamped = Math.max(0, Math.min(target, totalPages - 1));
+      if (clamped !== currentPage) onSelect(clamped);
+      setInputVal(String(clamped + 1));
+    },
+    [currentPage, totalPages, onSelect]
+  );
+
+  const handleInputSubmit = useCallback(() => {
+    const num = parseInt(inputVal, 10);
+    if (!isNaN(num) && num >= 1 && num <= totalPages) {
+      jumpToPage(num - 1);
+    } else {
+      setInputVal(String(currentPage + 1));
+    }
+  }, [inputVal, totalPages, currentPage, jumpToPage]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleInputSubmit();
+    },
+    [handleInputSubmit]
+  );
+
+  if (totalPages <= 1) return null;
+
+  // Build a sliding window of page buttons (show max 5 centered on current)
+  const maxButtons = 5;
+  let startPage = Math.max(0, currentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages - 1, startPage + maxButtons - 1);
+  if (endPage - startPage < maxButtons - 1) {
+    startPage = Math.max(0, endPage - maxButtons + 1);
+  }
+  const pageButtons: number[] = [];
+  for (let i = startPage; i <= endPage; i++) pageButtons.push(i);
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {/* First */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        disabled={currentPage === 0}
+        onClick={() => jumpToPage(0)}
+      >
+        <ChevronsLeft className="h-3.5 w-3.5" />
+      </Button>
+      {/* Previous */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        disabled={currentPage === 0}
+        onClick={() => jumpToPage(currentPage - 1)}
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+      </Button>
+
+      {/* Ellipsis before window */}
+      {startPage > 0 && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-xs"
+            onClick={() => jumpToPage(0)}
+          >
+            1
+          </Button>
+          {startPage > 1 && (
+            <span className="text-xs text-muted-foreground px-0.5">&hellip;</span>
+          )}
+        </>
+      )}
+
+      {/* Page number buttons */}
+      {pageButtons.map((p) => (
+        <Button
+          key={p}
+          variant={p === currentPage ? "default" : "ghost"}
+          size="icon"
+          className="h-7 w-7 text-xs font-mono"
+          onClick={() => jumpToPage(p)}
+        >
+          {p + 1}
+        </Button>
+      ))}
+
+      {/* Ellipsis after window */}
+      {endPage < totalPages - 1 && (
+        <>
+          {endPage < totalPages - 2 && (
+            <span className="text-xs text-muted-foreground px-0.5">&hellip;</span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-xs"
+            onClick={() => jumpToPage(totalPages - 1)}
+          >
+            {totalPages}
+          </Button>
+        </>
+      )}
+
+      {/* Next */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        disabled={currentPage >= totalPages - 1}
+        onClick={() => jumpToPage(currentPage + 1)}
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </Button>
+      {/* Last */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        disabled={currentPage >= totalPages - 1}
+        onClick={() => jumpToPage(totalPages - 1)}
+      >
+        <ChevronsRight className="h-3.5 w-3.5" />
+      </Button>
+
+      {/* Jump-to input */}
+      <span className="text-xs text-muted-foreground ml-1">Go to</span>
+      <Input
+        type="number"
+        min={1}
+        max={totalPages}
+        value={inputVal}
+        onChange={(e) => setInputVal(e.target.value)}
+        onBlur={handleInputSubmit}
+        onKeyDown={handleKeyDown}
+        className="h-7 w-14 text-xs text-center font-mono"
+      />
+    </div>
   );
 }
