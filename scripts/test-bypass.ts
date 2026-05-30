@@ -83,10 +83,16 @@ async function main() {
     title: document.title,
     bodyStart: document.body?.innerText?.substring(0, 400) || '',
     htmlId: document.documentElement.id,
+    readyState: document.readyState,
+    bodyChildCount: document.body?.children.length,
+  }));
+  
+  const extras = await page.evaluate(() => ({
     hasCharts: document.querySelectorAll('canvas, svg.recharts-surface').length > 0,
     tabCount: document.querySelectorAll('[role="tab"]').length,
     buttonCount: document.querySelectorAll('button').length,
   }));
+  console.log('Extras:', JSON.stringify(extras));
   console.log('\nAfter 9s:', JSON.stringify(state));
 
   if (misses.length > 0) {
