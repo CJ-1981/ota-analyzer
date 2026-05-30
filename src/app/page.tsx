@@ -396,6 +396,8 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const isMobile = useIsMobile();
+
   if (loading || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -413,7 +415,6 @@ export default function Home() {
     0,
     50
   );
-  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">

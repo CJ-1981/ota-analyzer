@@ -38,6 +38,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${playfairDisplay.variable} ${lora.variable} ${inter.variable} font-sans antialiased bg-background text-ink`}
+        suppressHydrationWarning
       >
         {children}
       </body>
