@@ -1145,7 +1145,7 @@ export default function Home() {
                 </Card>
 
                 {/* Wasted Data by Condition */}
-                <Card className="p-4 gap-4">
+                <Card className={isMobile ? "p-3 gap-3" : "p-4 gap-4"}>
                   <CardHeader className="p-0 pb-2">
                     <CardTitle className="text-base font-bold uppercase tracking-wide">
                       {wasteLabel} by Condition
@@ -1155,12 +1155,12 @@ export default function Home() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ResponsiveContainer width="100%" height={isMobile ? Math.max(250, data.wastedByCondition.length * 36) : 300}>
+                    <ResponsiveContainer width="100%" height={isMobile ? Math.max(200, data.wastedByCondition.length * 44) : 300}>
                       <BarChart
                         data={data.wastedByCondition}
                         layout="vertical"
                         margin={isMobile
-                          ? { top: 5, right: 10, left: 60, bottom: 5 }
+                          ? { top: 0, right: 8, left: 2, bottom: 0 }
                           : { top: 5, right: 20, left: 120, bottom: 5 }
                         }
                       >
@@ -1169,16 +1169,13 @@ export default function Home() {
                           stroke="#e0e0e0"
                           horizontal={false}
                         />
-                        <XAxis type="number" tick={{ fontSize: 11, fill: "#757575" }} />
+                        <XAxis type="number" tick={{ fontSize: 10, fill: "#757575" }} />
                         <YAxis
                           dataKey="condition"
                           type="category"
-                          tick={{ fontSize: isMobile ? 10 : 11, fill: "#000000", fontWeight: 700 }}
-                          width={isMobile ? 50 : 110}
-                          tickFormatter={isMobile
-                            ? (v: string) => v.length > 12 ? v.slice(0, 11) + '…' : v
-                            : undefined
-                          }
+                          tick={{ fontSize: isMobile ? 9 : 11, fill: "#000000", fontWeight: 700 }}
+                          width={isMobile ? 90 : 110}
+                          interval={0}
                         />
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
@@ -1202,6 +1199,7 @@ export default function Home() {
                           name={`Wasted (GB)`}
                           fill="#f59e0b"
                           radius={0}
+                          barSize={isMobile ? 28 : undefined}
                           opacity={hiddenSeries["wasted_gb"] ? 0 : 0.85}
                           hide={hiddenSeries["wasted_gb"]}
                         />

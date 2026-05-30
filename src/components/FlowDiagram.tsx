@@ -71,26 +71,23 @@ export function FlowDiagram({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        <ResponsiveContainer width="100%" height={isMobile ? Math.max(250, chartData.length * 36) : 350}>
+        <ResponsiveContainer width="100%" height={isMobile ? Math.max(200, chartData.length * 44) : 350}>
           <BarChart
             data={chartData}
             layout="vertical"
             margin={isMobile
-              ? { left: 10, right: 10 }
+              ? { top: 0, right: 8, left: 2, bottom: 0 }
               : { left: 20, right: 20 }
             }
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 11, fill: "#757575" }} />
+            <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 11, fill: "#757575" }} />
             <YAxis
               dataKey="source"
               type="category"
-              width={isMobile ? 50 : 110}
-              tick={{ fontSize: isMobile ? 10 : 11, fill: "#000000", fontWeight: 700 }}
-              tickFormatter={isMobile
-                ? (v: string) => v.length > 10 ? v.slice(0, 9) + '…' : v
-                : undefined
-              }
+              width={isMobile ? 80 : 110}
+              tick={{ fontSize: isMobile ? 9 : 11, fill: "#000000", fontWeight: 700 }}
+              interval={0}
             />
             <Tooltip
               contentStyle={TOOLTIP_CONTENT_STYLE}
