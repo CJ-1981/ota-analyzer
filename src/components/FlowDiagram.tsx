@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SankeyLink } from "@/lib/analytics";
 import { TOOLTIP_CONTENT_STYLE, getStateColor } from "@/lib/chart-helpers";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 export function FlowDiagram({
   links,
@@ -57,6 +58,8 @@ export function FlowDiagram({
     return orderA - orderB;
   });
 
+  const isMobile = useIsMobile();
+
   return (
     <Card className="p-4 gap-4">
       <CardHeader className="p-0 pb-2">
@@ -68,19 +71,26 @@ export function FlowDiagram({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        <ResponsiveContainer width="100%" height={350}>
+        <ResponsiveContainer width="100%" height={isMobile ? Math.max(250, chartData.length * 36) : 350}>
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ left: 20, right: 20 }}
+            margin={isMobile
+              ? { left: 10, right: 10 }
+              : { left: 20, right: 20 }
+            }
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 11, fill: "#757575" }} />
             <YAxis
               dataKey="source"
               type="category"
-              width={110}
-              tick={{ fontSize: 11, fill: "#000000", fontWeight: 700 }}
+              width={isMobile ? 50 : 110}
+              tick={{ fontSize: isMobile ? 10 : 11, fill: "#000000", fontWeight: 700 }}
+              tickFormatter={isMobile
+                ? (v: string) => v.length > 10 ? v.slice(0, 9) + '…' : v
+                : undefined
+              }
             />
             <Tooltip
               contentStyle={TOOLTIP_CONTENT_STYLE}

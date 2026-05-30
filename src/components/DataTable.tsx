@@ -146,8 +146,8 @@ export function DataTable({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="max-h-[32rem] overflow-y-auto">
-          <Table>
+        <div className="max-h-[32rem] overflow-auto">
+          <Table className="min-w-[40rem]">
             <TableHeader>
               {/* Sortable column headers */}
               <TableRow>

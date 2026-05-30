@@ -72,6 +72,7 @@ import { computeAnalytics } from "@/lib/analytics";
 import type { AnalyticsResult } from "@/lib/analytics";
 import { generateReportHtml } from "@/lib/report-generator";
 import { TOOLTIP_CONTENT_STYLE } from "@/lib/chart-helpers";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 import { StateBadge } from "@/components/StateBadge";
 import { TagInput } from "@/components/TagInput";
@@ -412,9 +413,10 @@ export default function Home() {
     0,
     50
   );
+  const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       {/* Masthead Band — Wired signature */}
       <header className="border-b border-ink px-4 py-6 md:px-8">
         <div className="max-w-7xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -908,7 +910,7 @@ export default function Home() {
                       setEntityFilter(val);
                     }}
                     placeholder={`All ${entityLabel}s`}
-                    className="w-[240px]"
+                    className={isMobile ? "w-full" : "w-[240px]"}
                   />
 
                   <MultiSelect
@@ -919,7 +921,7 @@ export default function Home() {
                       setStateFilter(val);
                     }}
                     placeholder="All States"
-                    className="w-[220px]"
+                    className={isMobile ? "w-full" : "w-[220px]"}
                   />
 
                   {(entityFilter.length > 0 || stateFilter.length > 0) && (
@@ -1153,16 +1155,14 @@ export default function Home() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={isMobile ? Math.max(250, data.wastedByCondition.length * 36) : 300}>
                       <BarChart
                         data={data.wastedByCondition}
                         layout="vertical"
-                        margin={{
-                          top: 5,
-                          right: 20,
-                          left: 120,
-                          bottom: 5,
-                        }}
+                        margin={isMobile
+                          ? { top: 5, right: 10, left: 60, bottom: 5 }
+                          : { top: 5, right: 20, left: 120, bottom: 5 }
+                        }
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -1173,8 +1173,12 @@ export default function Home() {
                         <YAxis
                           dataKey="condition"
                           type="category"
-                          tick={{ fontSize: 11, fill: "#000000", fontWeight: 700 }}
-                          width={110}
+                          tick={{ fontSize: isMobile ? 10 : 11, fill: "#000000", fontWeight: 700 }}
+                          width={isMobile ? 50 : 110}
+                          tickFormatter={isMobile
+                            ? (v: string) => v.length > 12 ? v.slice(0, 11) + '…' : v
+                            : undefined
+                          }
                         />
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
