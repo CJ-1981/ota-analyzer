@@ -833,16 +833,16 @@ export default function Home() {
 
           {/* Tabs */}
           <Tabs defaultValue="system" className="space-y-4">
-            <TabsList className="overflow-x-auto">
-              <TabsTrigger value="system" className="gap-1.5">
+            <TabsList className="w-full grid grid-cols-3">
+              <TabsTrigger value="system" className="gap-1.5 justify-center">
                 <BarChart3 className="h-3.5 w-3.5" />
                 System Analytics
               </TabsTrigger>
-              <TabsTrigger value="operational" className="gap-1.5">
+              <TabsTrigger value="operational" className="gap-1.5 justify-center">
                 <Activity className="h-3.5 w-3.5" />
                 Operational Drilldown
               </TabsTrigger>
-              <TabsTrigger value="wasted" className="gap-1.5">
+              <TabsTrigger value="wasted" className="gap-1.5 justify-center">
                 <HardDrive className="h-3.5 w-3.5" />
                 Wasted Data
               </TabsTrigger>
