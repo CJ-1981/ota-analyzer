@@ -196,3 +196,18 @@
     font-family: var(--font-apercu), Inter, system-ui, sans-serif;
   }
 }
+
+/* Recharts tooltip — force dark-mode-aware text color on internal elements
+ * that Recharts renders with hardcoded styles, bypassing CSS inheritance. */
+.recharts-default-tooltip {
+  color: var(--card-foreground) !important;
+  background-color: var(--card) !important;
+  border-color: var(--hairline) !important;
+}
+.recharts-default-tooltip .recharts-tooltip-label {
+  color: var(--card-foreground) !important;
+  border-bottom-color: var(--hairline) !important;
+}
+.recharts-default-tooltip li.recharts-tooltip-item {
+  color: var(--card-foreground) !important;
+}
