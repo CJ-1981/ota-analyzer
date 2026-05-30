@@ -1069,7 +1069,15 @@ export default function Home() {
                         />
                         <Legend
                           onClick={handleLegendClick}
-                          wrapperStyle={{ cursor: "pointer" }}
+                          wrapperStyle={{
+                            cursor: "pointer",
+                            paddingTop: "8px",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            fontFamily: "Inter, system-ui, sans-serif",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                          }}
                         />
                         <Area
                           type="monotone"
@@ -1229,7 +1237,15 @@ export default function Home() {
                         />
                         <Legend
                           onClick={handleLegendClick}
-                          wrapperStyle={{ cursor: "pointer" }}
+                          wrapperStyle={{
+                            cursor: "pointer",
+                            paddingTop: "8px",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            fontFamily: "Inter, system-ui, sans-serif",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                          }}
                         />
                         <Bar
                           dataKey="wasted_gb"
