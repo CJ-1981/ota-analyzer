@@ -1155,28 +1155,21 @@ export default function Home() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ResponsiveContainer width="100%" height={isMobile ? Math.max(200, data.wastedByCondition.length * 44) : 300}>
+                    <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={data.wastedByCondition}
-                        layout="vertical"
-                        margin={isMobile
-                          ? { top: 0, right: 8, left: 2, bottom: 0 }
-                          : { top: 5, right: 20, left: 120, bottom: 5 }
-                        }
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#e0e0e0"
-                          horizontal={false}
-                        />
-                        <XAxis type="number" tick={{ fontSize: 10, fill: "#757575" }} />
-                        <YAxis
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis
                           dataKey="condition"
-                          type="category"
-                          tick={{ fontSize: isMobile ? 9 : 11, fill: "#000000", fontWeight: 700 }}
-                          width={isMobile ? 90 : 110}
+                          tick={{ fontSize: isMobile ? 9 : 10, fill: "#000000", fontWeight: 700 }}
+                          angle={isMobile ? -35 : -25}
+                          textAnchor="end"
+                          height={isMobile ? 70 : 55}
                           interval={0}
                         />
+                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
                         <Tooltip
                           contentStyle={TOOLTIP_CONTENT_STYLE}
                           formatter={(value: number, name: string) => {
@@ -1199,7 +1192,6 @@ export default function Home() {
                           name={`Wasted (GB)`}
                           fill="#f59e0b"
                           radius={0}
-                          barSize={isMobile ? 28 : undefined}
                           opacity={hiddenSeries["wasted_gb"] ? 0 : 0.85}
                           hide={hiddenSeries["wasted_gb"]}
                         />
