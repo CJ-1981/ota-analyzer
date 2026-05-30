@@ -1036,6 +1036,9 @@ export default function Home() {
                           dataKey="date"
                           tick={{ fontSize: 10, fill: "#757575" }}
                           tickFormatter={(v) => v.slice(5)}
+                          angle={-45}
+                          textAnchor="end"
+                          height={55}
                         />
                         <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
                         <Tooltip
