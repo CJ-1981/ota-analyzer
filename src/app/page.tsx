@@ -141,6 +141,7 @@ export default function Home() {
   const [uploadedData, setUploadedData] = useState<RawDataRow[] | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [autoDetectedMapping, setAutoDetectedMapping] = useState<ColumnMapping | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -283,6 +284,7 @@ export default function Home() {
 
       // Auto-detect
       const detected = autoDetectColumns(rows);
+      setAutoDetectedMapping(detected);
       if (detected) {
         setConfig((prev) => ({
           ...prev,
@@ -303,6 +305,7 @@ export default function Home() {
   const handleAutoDetect = () => {
     if (!uploadedData) return;
     const detected = autoDetectColumns(uploadedData);
+    setAutoDetectedMapping(detected);
     if (detected) {
       setConfig((prev) => ({
         ...prev,
@@ -323,6 +326,7 @@ export default function Home() {
     setUploadedData(null);
     setUploadedFileName(null);
     setDetectedColumns([]);
+    setAutoDetectedMapping(null);
     setConfig({
       ...DEFAULT_OTA_CONFIG,
       stateConfig: { ...DEFAULT_OTA_CONFIG.stateConfig },
@@ -627,17 +631,24 @@ export default function Home() {
                 </div>
 
                 {/* Section B: Column Mapping */}
-                {isCustom && detectedColumns.length > 0 && (
+                {detectedColumns.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                       <Settings className="h-4 w-4" />
                       Column Mapping
+                      {autoDetectedMapping && (
+                        <Badge variant="secondary" className="text-[10px] gap-1">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          Auto-detected
+                        </Badge>
+                      )}
                     </h3>
                     <Separator />
                     <ColumnMappingSelector
                       columns={detectedColumns}
                       mapping={config.columnMapping}
                       onChange={updateColumnMapping}
+                      autoDetectedMapping={autoDetectedMapping}
                     />
                   </div>
                 )}
