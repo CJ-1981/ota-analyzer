@@ -34,7 +34,8 @@ export function FunnelChart({
           {entityLabel} progression through stages
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto">
+        <div className="min-w-[300px]">
         <div className="space-y-2">
           {chartData.map((item, idx) => {
             const barColor = CHART_PALETTE[idx] || "#888";
@@ -65,6 +66,7 @@ export function FunnelChart({
               </div>
             );
           })}
+        </div>
         </div>
       </CardContent>
     </Card>

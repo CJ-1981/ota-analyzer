@@ -70,7 +70,8 @@ export function FlowDiagram({
           Horizontal stacked view of state-to-state transitions
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 overflow-auto">
+        <div className="min-w-[400px]">
         <ResponsiveContainer width="100%" height={isMobile ? Math.max(200, chartData.length * 44) : 350}>
           <BarChart
             data={chartData}
@@ -112,6 +113,7 @@ export function FlowDiagram({
             ))}
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

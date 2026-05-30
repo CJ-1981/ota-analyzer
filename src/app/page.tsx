@@ -980,7 +980,8 @@ export default function Home() {
                       Number of attempts per {entityLabel.toLowerCase()}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-0">
+                  <CardContent className="p-0 overflow-auto">
+                    <div className="min-w-[300px]">
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={data.retryDistribution}
@@ -1020,6 +1021,7 @@ export default function Home() {
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1029,7 +1031,8 @@ export default function Home() {
                     <CardTitle className="text-base font-bold uppercase tracking-wide">Events Over Time</CardTitle>
                     <CardDescription>Daily log event counts</CardDescription>
                   </CardHeader>
-                  <CardContent className="p-0">
+                  <CardContent className="p-0 overflow-auto">
+                    <div className="min-w-[400px]">
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart
                         data={data.timeSeries}
@@ -1081,6 +1084,7 @@ export default function Home() {
                         />
                       </AreaChart>
                     </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1131,7 +1135,8 @@ export default function Home() {
                       Distribution of progress when failures occurred
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-0">
+                  <CardContent className="p-0 overflow-auto">
+                    <div className="min-w-[350px]">
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={data.failureProgressBuckets}
@@ -1162,6 +1167,7 @@ export default function Home() {
                         />
                       </BarChart>
                     </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1175,7 +1181,8 @@ export default function Home() {
                       {wasteLabel} (GB) per failure type
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-0">
+                  <CardContent className="p-0 overflow-auto">
+                    <div className="min-w-[350px]">
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
                         data={data.wastedByCondition}
@@ -1218,6 +1225,7 @@ export default function Home() {
                         />
                       </BarChart>
                     </ResponsiveContainer>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
