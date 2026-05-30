@@ -832,6 +832,62 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Global Filters — applies across all tabs */}
+          <Card className="p-4 gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              Filters
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <MultiSelect
+                options={entityOptions}
+                selected={entityFilter}
+                onChange={(val) => {
+                  setComputing(true);
+                  setEntityFilter(val);
+                }}
+                placeholder={`All ${entityLabel}s`}
+                className={isMobile ? "w-full" : "w-[240px]"}
+              />
+
+              <MultiSelect
+                options={data.uniqueStates}
+                selected={stateFilter}
+                onChange={(val) => {
+                  setComputing(true);
+                  setStateFilter(val);
+                }}
+                placeholder="All States"
+                className={isMobile ? "w-full" : "w-[220px]"}
+              />
+
+              {(entityFilter.length > 0 || stateFilter.length > 0) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setComputing(true);
+                    setEntityFilter([]);
+                    setStateFilter([]);
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
+
+              <Badge variant="secondary" className="ml-auto">
+                {data.filteredEntries.length.toLocaleString()} entries
+              </Badge>
+            </div>
+          </Card>
+
+          {/* Re-run analysis for custom mode when filters change */}
+          {mode === "custom" && uploadedData && (
+            <FilterRunner
+              runCustomAnalysis={runCustomAnalysis}
+            />
+          )}
+
           {/* Tabs */}
           <Tabs defaultValue="system" className="space-y-4">
             <TabsList className="w-full grid grid-cols-3">
@@ -910,62 +966,6 @@ export default function Home() {
 
             {/* Tab 2: Operational Drilldown */}
             <TabsContent value="operational" className="space-y-4">
-              {/* Filters */}
-              <Card className="p-4 gap-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <MultiSelect
-                    options={entityOptions}
-                    selected={entityFilter}
-                    onChange={(val) => {
-                      setComputing(true);
-                      setEntityFilter(val);
-                    }}
-                    placeholder={`All ${entityLabel}s`}
-                    className={isMobile ? "w-full" : "w-[240px]"}
-                  />
-
-                  <MultiSelect
-                    options={data.uniqueStates}
-                    selected={stateFilter}
-                    onChange={(val) => {
-                      setComputing(true);
-                      setStateFilter(val);
-                    }}
-                    placeholder="All States"
-                    className={isMobile ? "w-full" : "w-[220px]"}
-                  />
-
-                  {(entityFilter.length > 0 || stateFilter.length > 0) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setComputing(true);
-                        setEntityFilter([]);
-                        setStateFilter([]);
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  )}
-
-                  <Badge variant="secondary" className="ml-auto">
-                    {data.filteredEntries.length.toLocaleString()} entries
-                  </Badge>
-                </div>
-              </Card>
-
-              {/* Re-run analysis for custom mode when filters change */}
-              {mode === "custom" && uploadedData && (
-                <FilterRunner
-                  runCustomAnalysis={runCustomAnalysis}
-                />
-              )}
-
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Retry Distribution */}
                 <Card className="p-4 gap-4">
