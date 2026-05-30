@@ -18,6 +18,45 @@ import {
 import type { AnalyticsResult, EnrichedEntry } from "@/lib/analytics";
 import { StateBadge } from "./StateBadge";
 
+/* ------------------------------------------------------------------ */
+/*  Deterministic color for entity IDs                                   */
+/* ------------------------------------------------------------------ */
+const ENTITY_PALETTE = [
+  { bg: "#dbeafe", text: "#1e40af" }, // blue
+  { bg: "#dcfce7", text: "#166534" }, // green
+  { bg: "#fef3c7", text: "#92400e" }, // amber
+  { bg: "#fae8ff", text: "#86198f" }, // fuchsia
+  { bg: "#e0e7ff", text: "#3730a3" }, // indigo
+  { bg: "#ffe4e6", text: "#9f1239" }, // rose
+  { bg: "#f0fdf4", text: "#15803d" }, // emerald
+  { bg: "#fff7ed", text: "#9a3412" }, // orange
+  { bg: "#f5f3ff", text: "#5b21b6" }, // violet
+  { bg: "#ecfdf5", text: "#065f46" }, // teal
+  { bg: "#fef9c3", text: "#854d0e" }, // yellow
+  { bg: "#fdf2f8", text: "#9d174d" }, // pink
+];
+
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    hash = ((hash << 5) - hash + ch) | 0;
+  }
+  return Math.abs(hash);
+}
+
+const entityColorCache = new Map<string, { bg: string; text: string }>();
+
+function getEntityColor(entityId: string): { bg: string; text: string } {
+  if (entityId === "—") return { bg: "transparent", text: "inherit" };
+  let cached = entityColorCache.get(entityId);
+  if (cached) return cached;
+  const idx = hashString(entityId) % ENTITY_PALETTE.length;
+  cached = ENTITY_PALETTE[idx];
+  entityColorCache.set(entityId, cached);
+  return cached;
+}
+
 export type SortKey = "entity_id" | "timestamp" | "state" | "progress" | "attempt_id" | "condition";
 
 export type DataTableProps = {
@@ -355,8 +394,13 @@ export function DataTable({
                     <TableRow
                       key={`${eid}-${entry.timestamp}-${entry.state}-${entry.progress}-${entry.attempt_id}`}
                     >
-                      <TableCell className="font-mono text-xs">
-                        {eid}
+                      <TableCell className="text-xs">
+                        <span
+                          className="inline-block rounded px-1.5 py-0.5 font-mono font-medium"
+                          style={{ backgroundColor: getEntityColor(eid).bg, color: getEntityColor(eid).text }}
+                        >
+                          {eid}
+                        </span>
                       </TableCell>
                       <TableCell className="text-xs text-body">
                         {entry.timestamp
