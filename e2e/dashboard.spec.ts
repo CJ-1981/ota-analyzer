@@ -8,10 +8,21 @@ async function waitForDashboard(page: Page) {
   });
 }
 
+// Regex patterns that match tab labels on both mobile and desktop viewports.
+// Mobile uses shortened labels ("System", "Ops Drilldown", "Wasted").
+// Desktop uses full labels ("System Analytics", "Operational Drilldown", "Wasted Data").
+const TAB_NAME: Record<string, RegExp> = {
+  system: /system/i,
+  operational: /operational|ops/i,
+  wasted: /wasted/i,
+};
+
+function tabSelector(page: Page, tab: "system" | "operational" | "wasted") {
+  return page.getByRole("tab", { name: TAB_NAME[tab] });
+}
+
 async function goToTab(page: Page, tab: "system" | "operational" | "wasted") {
-  // Use value attribute (constant across breakpoints) instead of visible text
-  // which changes on mobile (e.g. "Operational Drilldown" → "Ops Drilldown")
-  const tabEl = page.getByRole("tab").filter({ has: page.locator(`[value="${tab}"]`) });
+  const tabEl = tabSelector(page, tab);
   // Scroll tab list to top of viewport to minimize overlap
   await page.evaluate(() => {
     const tabList = document.querySelector('[role="tablist"]');
@@ -60,23 +71,17 @@ test.describe("OTA Analytics Dashboard", () => {
   // ── Tabs ────────────────────────────────────────────────────────
 
   test("System Analytics tab is active by default", async ({ page }) => {
-    const systemTab = page.getByRole("tab").filter({ has: page.locator('[value="system"]') });
+    const systemTab = tabSelector(page, "system");
     await expect(systemTab).toHaveAttribute("data-state", "active");
   });
 
   test("switching tabs updates active state", async ({ page }) => {
     await goToTab(page, "operational");
-    await expect(page.getByRole("tab").filter({ has: page.locator('[value="operational"]') })).toHaveAttribute(
-      "data-state", "active"
-    );
+    await expect(tabSelector(page, "operational")).toHaveAttribute("data-state", "active");
     await goToTab(page, "wasted");
-    await expect(page.getByRole("tab").filter({ has: page.locator('[value="wasted"]') })).toHaveAttribute(
-      "data-state", "active"
-    );
+    await expect(tabSelector(page, "wasted")).toHaveAttribute("data-state", "active");
     await goToTab(page, "system");
-    await expect(page.getByRole("tab").filter({ has: page.locator('[value="system"]') })).toHaveAttribute(
-      "data-state", "active"
-    );
+    await expect(tabSelector(page, "system")).toHaveAttribute("data-state", "active");
   });
 
   // ── System Analytics tab content ────────────────────────────────
@@ -301,9 +306,9 @@ test.describe("Mobile responsive", () => {
   });
 
   test("tabs are visible on mobile", async ({ page }) => {
-    await expect(page.getByRole("tab").filter({ has: page.locator('[value="system"]') })).toBeVisible();
-    await expect(page.getByRole("tab").filter({ has: page.locator('[value="operational"]') })).toBeVisible();
-    await expect(page.getByRole("tab").filter({ has: page.locator('[value="wasted"]') })).toBeVisible();
+    await expect(tabSelector(page, "system")).toBeVisible();
+    await expect(tabSelector(page, "operational")).toBeVisible();
+    await expect(tabSelector(page, "wasted")).toBeVisible();
   });
 });
 
