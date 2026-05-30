@@ -26,5 +26,14 @@ export function useChartColors() {
     tooltipText: isDark ? "#e5e5e5" : "#000000",
     /** Tooltip border */
     tooltipBorder: isDark ? "#262626" : "#e0e0e0",
+    /** Ready-to-use contentStyle for Recharts <Tooltip contentStyle={...}> */
+    tooltipStyle: {
+      borderRadius: "0px",
+      border: `1px solid ${isDark ? "#262626" : "#e0e0e0"}`,
+      background: isDark ? "#111111" : "#ffffff",
+      color: isDark ? "#e5e5e5" : "#000000",
+      fontSize: "13px",
+      fontFamily: "Inter, system-ui, sans-serif",
+    },
   };
 }

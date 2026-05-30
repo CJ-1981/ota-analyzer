@@ -73,7 +73,7 @@ import { parseFile, autoDetectColumns, normalizeData } from "@/lib/data-parser";
 import { computeAnalytics } from "@/lib/analytics";
 import type { AnalyticsResult } from "@/lib/analytics";
 import { generateReportHtml } from "@/lib/report-generator";
-import { TOOLTIP_CONTENT_STYLE, getTooltipStyle } from "@/lib/chart-helpers";
+import { getStateColor } from "@/lib/chart-helpers";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useChartColors } from "@/lib/useChartColors";
 import { useTheme } from "next-themes";
@@ -1017,7 +1017,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={getTooltipStyle()}
+                          contentStyle={cc.tooltipStyle}
                           formatter={(value: number) => [
                             `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
                             entityLabel + "s",
@@ -1065,7 +1065,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={getTooltipStyle()}
+                          contentStyle={cc.tooltipStyle}
                         />
                         <Legend
                           onClick={handleLegendClick}
@@ -1176,7 +1176,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={getTooltipStyle()}
+                          contentStyle={cc.tooltipStyle}
                           formatter={(value: number) => [
                             `${value} failures`,
                             "Count",
@@ -1223,7 +1223,7 @@ export default function Home() {
                         />
                         <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={getTooltipStyle()}
+                          contentStyle={cc.tooltipStyle}
                           formatter={(value: number, name: string) => {
                             if (name === "wasted_gb")
                               return [`${value} GB`, wasteLabel];
@@ -1289,7 +1289,7 @@ export default function Home() {
                       />
                       <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                       <Tooltip
-                        contentStyle={getTooltipStyle()}
+                        contentStyle={cc.tooltipStyle}
                         formatter={(value: number, name: string) => {
                           if (name === "count")
                             return [`${value.toLocaleString()}`, "Failures"];

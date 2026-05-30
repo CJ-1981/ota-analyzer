@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SankeyLink } from "@/lib/analytics";
-import { TOOLTIP_CONTENT_STYLE, getStateColor, getTooltipStyle } from "@/lib/chart-helpers";
+import { getStateColor } from "@/lib/chart-helpers";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { useChartColors } from "@/lib/useChartColors";
 
@@ -93,7 +93,7 @@ export function FlowDiagram({
               interval={0}
             />
             <Tooltip
-              contentStyle={getTooltipStyle()}
+              contentStyle={cc.tooltipStyle}
               formatter={(value: number, name: string) => {
                 const label = entityLabelPlural ?? `${entityLabel.toLowerCase()}s`;
                 return [
