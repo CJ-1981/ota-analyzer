@@ -891,17 +891,20 @@ export default function Home() {
           {/* Tabs */}
           <Tabs defaultValue="system" className="space-y-4">
             <TabsList className="w-full grid grid-cols-3">
-              <TabsTrigger value="system" className="gap-1.5 justify-center">
+              <TabsTrigger value="system" className="gap-0.5 sm:gap-1.5 justify-center">
                 <BarChart3 className="h-3.5 w-3.5" />
-                System Analytics
+                <span className="hidden sm:inline">System Analytics</span>
+                <span className="sm:hidden">System</span>
               </TabsTrigger>
-              <TabsTrigger value="operational" className="gap-1.5 justify-center">
+              <TabsTrigger value="operational" className="gap-0.5 sm:gap-1.5 justify-center">
                 <Activity className="h-3.5 w-3.5" />
-                Operational Drilldown
+                <span className="hidden sm:inline">Operational Drilldown</span>
+                <span className="sm:hidden">Ops Drilldown</span>
               </TabsTrigger>
-              <TabsTrigger value="wasted" className="gap-1.5 justify-center">
+              <TabsTrigger value="wasted" className="gap-0.5 sm:gap-1.5 justify-center">
                 <HardDrive className="h-3.5 w-3.5" />
-                Wasted Data
+                <span className="hidden sm:inline">Wasted Data</span>
+                <span className="sm:hidden">Wasted</span>
               </TabsTrigger>
             </TabsList>
 
