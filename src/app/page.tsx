@@ -1219,6 +1219,59 @@ export default function Home() {
                 </Card>
               </div>
 
+              {/* Failure Count by Condition — vertical bar chart */}
+              <Card className={isMobile ? "p-3 gap-3" : "p-4 gap-4"}>
+                <CardHeader className="p-0 pb-2">
+                  <CardTitle className="text-base font-bold uppercase tracking-wide">
+                    Failure Count by Condition
+                  </CardTitle>
+                  <CardDescription>
+                    Number of failures per failure type
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={data.wastedByCondition}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                      <XAxis
+                        dataKey="condition"
+                        tick={{ fontSize: isMobile ? 9 : 10, fill: "#000000", fontWeight: 700 }}
+                        angle={isMobile ? -35 : -25}
+                        textAnchor="end"
+                        height={isMobile ? 70 : 55}
+                        interval={0}
+                      />
+                      <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
+                      <Tooltip
+                        contentStyle={TOOLTIP_CONTENT_STYLE}
+                        formatter={(value: number, name: string) => {
+                          if (name === "count")
+                            return [`${value.toLocaleString()}`, "Failures"];
+                          return [value, name];
+                        }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        name="Failures"
+                        fill="#ef4444"
+                        radius={0}
+                        opacity={0.85}
+                      >
+                        {data.wastedByCondition.map((_, idx) => (
+                          <Cell
+                            key={idx}
+                            fill={retryColors[idx % retryColors.length]}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
               {/* Condition Breakdown Table */}
               <Card className="p-4 gap-4">
                 <CardHeader className="p-0 pb-2">
