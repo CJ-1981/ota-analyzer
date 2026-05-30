@@ -130,6 +130,7 @@ export default function Home() {
   // Config mode
   const [mode, setMode] = useState<"demo" | "custom">("demo");
   const [dataSizeMB, setDataSizeMB] = useState<number>(450);
+  const [dataSizeInput, setDataSizeInput] = useState("450");
   const [configOpen, setConfigOpen] = useState(false);
   const [config, setConfig] = useState<AnalyzerConfig>({
     ...DEFAULT_OTA_CONFIG,
@@ -522,12 +523,18 @@ export default function Home() {
                         </Label>
                         <Input
                           type="number"
-                          value={dataSizeMB}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            if (!isNaN(val) && val > 0) setDataSizeMB(val);
-                          }}
+                          value={dataSizeInput}
+                          onChange={(e) => setDataSizeInput(e.target.value)}
                           onFocus={(e) => e.target.select()}
+                          onBlur={() => {
+                            const val = parseFloat(dataSizeInput);
+                            if (!isNaN(val) && val > 0) {
+                              setDataSizeMB(val);
+                              setDataSizeInput(String(val));
+                            } else {
+                              setDataSizeInput(String(dataSizeMB));
+                            }
+                          }}
                           className="h-8 text-xs"
                           min={1}
                           step={10}
