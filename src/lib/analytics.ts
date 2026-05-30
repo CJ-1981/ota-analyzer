@@ -139,29 +139,60 @@ function getEntityFinalStates(
   return result;
 }
 
+export type AnalyticsOptions = {
+  /** When provided, override every entry's size_value with this uniform package size (MB) */
+  overrideSizeMB?: number;
+};
+
+type LegacyArgs = [entries: NormalizedEntry[], entityIdFilters?: string[], stateFilters?: string[]];
+type NewArgs = [
+  entries: NormalizedEntry[],
+  config?: StateConfig,
+  entityIdFilters?: string[],
+  stateFilters?: string[],
+  options?: AnalyticsOptions,
+];
+
 export function computeAnalytics(
   entries: NormalizedEntry[],
   configOrEntityIds?: StateConfig | string[],
   maybeStateFilters?: string[],
-  stateFiltersOrUndefined?: string[]
+  stateFiltersOrOptions?: string[] | AnalyticsOptions,
+  maybeOptions?: AnalyticsOptions
 ): AnalyticsResult {
   // Support legacy signature: (entries, vehicleIdFilter, stateFilter)
   let config: StateConfig;
   let entityIdFilters: string[] | undefined;
   let stateFilters: string[] | undefined;
+  let options: AnalyticsOptions | undefined;
 
   if (Array.isArray(configOrEntityIds)) {
     config = DEFAULT_CONFIG;
     entityIdFilters = configOrEntityIds;
     stateFilters = maybeStateFilters;
+    // No options in legacy mode
   } else {
     config = configOrEntityIds || DEFAULT_CONFIG;
     entityIdFilters = undefined;
-    stateFilters = stateFiltersOrUndefined;
+    stateFilters = typeof stateFiltersOrOptions === "string" ? undefined : undefined;
+
+    // New signature: (entries, config, entityFilters?, stateFilters?, options?)
+    // When configOrEntityIds is StateConfig:
+    //   arg2 = entityIdFilters (string[] | undefined)
+    //   arg3 = stateFilters (string[] | undefined)
+    //   arg4 = options (AnalyticsOptions | undefined)
+    entityIdFilters = maybeStateFilters;
+    stateFilters = Array.isArray(stateFiltersOrOptions) ? stateFiltersOrOptions : undefined;
+    options = !Array.isArray(stateFiltersOrOptions) ? stateFiltersOrOptions : maybeOptions;
   }
 
+  // Apply size override (user-chosen package size in demo mode)
+  const effectiveEntries = options?.overrideSizeMB != null
+    ? entries.map((e) => ({ ...e, size_value: options.overrideSizeMB! }))
+    : entries;
+
   // Apply filters (multi-select: include entries matching ANY selected entity or state)
-  let filtered = entries;
+  let filtered = effectiveEntries;
   if (entityIdFilters && entityIdFilters.length > 0) {
     const idSet = new Set(entityIdFilters);
     filtered = filtered.filter((e) => idSet.has(e.entity_id));

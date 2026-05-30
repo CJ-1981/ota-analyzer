@@ -210,7 +210,8 @@ export default function Home() {
           cachedNormalized,
           DEFAULT_OTA_CONFIG.stateConfig,
           entityFilter.length > 0 ? entityFilter : undefined,
-          stateFilter.length > 0 ? stateFilter : undefined
+          stateFilter.length > 0 ? stateFilter : undefined,
+          { overrideSizeMB: dataSizeMB }
         );
         setData(result);
         setPage(0);
@@ -222,7 +223,7 @@ export default function Home() {
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [mode, cachedNormalized, entityFilter, stateFilter]);
+  }, [mode, cachedNormalized, entityFilter, stateFilter, dataSizeMB]);
 
   // Run custom analysis (client-side)
   const runCustomAnalysis = useCallback(() => {
@@ -236,7 +237,8 @@ export default function Home() {
           normalized,
           config.stateConfig,
           entityFilter.length > 0 ? entityFilter : undefined,
-          stateFilter.length > 0 ? stateFilter : undefined
+          stateFilter.length > 0 ? stateFilter : undefined,
+          { overrideSizeMB: dataSizeMB }
         );
         setData(result);
         setPage(0);
@@ -245,7 +247,7 @@ export default function Home() {
       }
       setComputing(false);
     }, 0);
-  }, [uploadedData, config, entityFilter, stateFilter]);
+  }, [uploadedData, config, entityFilter, stateFilter, dataSizeMB]);
 
   const handleRegenerate = () => {
     // Data is pre-computed and static — just reset all filters/views
