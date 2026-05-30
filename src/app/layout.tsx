@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lora, Inter } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
@@ -40,7 +41,9 @@ export default function RootLayout({
         className={`${playfairDisplay.variable} ${lora.variable} ${inter.variable} font-sans antialiased bg-background text-ink`}
         suppressHydrationWarning
       >
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

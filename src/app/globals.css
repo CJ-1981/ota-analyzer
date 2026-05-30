@@ -50,8 +50,8 @@
 }
 
 /*
- * Wired Design System — Light-only editorial palette
- * No dark mode. Strict black-on-white duet with ink-soft grey.
+ * Wired Design System — Light mode: strict black-on-white duet with ink-soft grey.
+ * Dark mode: inverted for OLED-friendly viewing.
  */
 :root {
   /* Square corners — the brand's signature */
@@ -115,7 +115,65 @@
   --sidebar-ring: #000000;
 }
 
-/* No dark mode — Wired is light-only */
+/* Dark mode — inverted palette */
+.dark {
+  /* Surfaces */
+  --background: #0a0a0a;
+  --foreground: #e5e5e5;
+  --card: #111111;
+  --card-foreground: #e5e5e5;
+  --popover: #111111;
+  --popover-foreground: #e5e5e5;
+
+  /* Primary = bright white on dark */
+  --primary: #e5e5e5;
+  --primary-foreground: #000000;
+
+  /* Secondary = dark grey card */
+  --secondary: #1a1a1a;
+  --secondary-foreground: #e5e5e5;
+
+  /* Muted = subtle grey */
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+
+  /* Accent */
+  --accent: #1a1a1a;
+  --accent-foreground: #e5e5e5;
+
+  /* Destructive */
+  --destructive: #ef4444;
+
+  /* Borders & elevation */
+  --border: #262626;
+  --input: #404040;
+  --ring: #404040;
+
+  /* Hairline */
+  --hairline: #262626;
+
+  /* Text hierarchy */
+  --ink: #e5e5e5;
+  --body: #a3a3a3;
+  --link: #38bdf8;
+
+  /* Charts — same chromatic palette, slightly boosted for contrast */
+  --chart-1: #60a5fa;
+  --chart-2: #f87171;
+  --chart-3: #4ade80;
+  --chart-4: #fbbf24;
+  --chart-5: #a78bfa;
+
+  /* Sidebar */
+  --sidebar: #111111;
+  --sidebar-foreground: #e5e5e5;
+  --sidebar-primary: #e5e5e5;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #e5e5e5;
+  --sidebar-border: #262626;
+  --sidebar-ring: #404040;
+}
 
 @layer base {
   * {

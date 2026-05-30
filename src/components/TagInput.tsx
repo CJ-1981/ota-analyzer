@@ -52,7 +52,7 @@ export function TagInput({
                 <button
                   type="button"
                   onClick={() => moveTag(idx, -1)}
-                  className="hover:bg-black/10 rounded p-0.5"
+                  className="hover:bg-ink/10 rounded p-0.5"
                   disabled={idx === 0}
                   aria-label="Move up"
                 >
@@ -61,7 +61,7 @@ export function TagInput({
                 <button
                   type="button"
                   onClick={() => moveTag(idx, 1)}
-                  className="hover:bg-black/10 rounded p-0.5"
+                  className="hover:bg-ink/10 rounded p-0.5"
                   disabled={idx === values.length - 1}
                   aria-label="Move down"
                 >
@@ -73,7 +73,7 @@ export function TagInput({
             <button
               type="button"
               onClick={() => removeTag(idx)}
-              className="hover:bg-black/10 rounded p-0.5 ml-0.5"
+              className="hover:bg-ink/10 rounded p-0.5 ml-0.5"
               aria-label={`Remove ${v}`}
             >
               <X className="h-3 w-3" />

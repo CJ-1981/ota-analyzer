@@ -10,8 +10,9 @@ import {
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SankeyLink } from "@/lib/analytics";
-import { TOOLTIP_CONTENT_STYLE, getStateColor } from "@/lib/chart-helpers";
+import { TOOLTIP_CONTENT_STYLE, getStateColor, getTooltipStyle } from "@/lib/chart-helpers";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { useChartColors } from "@/lib/useChartColors";
 
 export function FlowDiagram({
   links,
@@ -59,6 +60,7 @@ export function FlowDiagram({
   });
 
   const isMobile = useIsMobile();
+  const cc = useChartColors();
 
   return (
     <Card className="p-4 gap-4">
@@ -81,17 +83,17 @@ export function FlowDiagram({
               : { left: 20, right: 20 }
             }
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 11, fill: "#757575" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke={cc.gridStroke} horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 11, fill: cc.tickFill }} />
             <YAxis
               dataKey="source"
               type="category"
               width={isMobile ? 80 : 110}
-              tick={{ fontSize: isMobile ? 9 : 11, fill: "#000000", fontWeight: 700 }}
+              tick={{ fontSize: isMobile ? 9 : 11, fill: cc.labelFill, fontWeight: 700 }}
               interval={0}
             />
             <Tooltip
-              contentStyle={TOOLTIP_CONTENT_STYLE}
+              contentStyle={getTooltipStyle()}
               formatter={(value: number, name: string) => {
                 const label = entityLabelPlural ?? `${entityLabel.toLowerCase()}s`;
                 return [

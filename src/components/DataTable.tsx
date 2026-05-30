@@ -22,18 +22,18 @@ import { StateBadge } from "./StateBadge";
 /*  Deterministic color for entity IDs                                   */
 /* ------------------------------------------------------------------ */
 const ENTITY_PALETTE = [
-  { bg: "#dbeafe", text: "#1e40af" }, // blue
-  { bg: "#dcfce7", text: "#166534" }, // green
-  { bg: "#fef3c7", text: "#92400e" }, // amber
-  { bg: "#fae8ff", text: "#86198f" }, // fuchsia
-  { bg: "#e0e7ff", text: "#3730a3" }, // indigo
-  { bg: "#ffe4e6", text: "#9f1239" }, // rose
-  { bg: "#f0fdf4", text: "#15803d" }, // emerald
-  { bg: "#fff7ed", text: "#9a3412" }, // orange
-  { bg: "#f5f3ff", text: "#5b21b6" }, // violet
-  { bg: "#ecfdf5", text: "#065f46" }, // teal
-  { bg: "#fef9c3", text: "#854d0e" }, // yellow
-  { bg: "#fdf2f8", text: "#9d174d" }, // pink
+  { bg: "#dbeafe", text: "#1e40af", darkBg: "#1e3a5f", darkText: "#93c5fd" }, // blue
+  { bg: "#dcfce7", text: "#166534", darkBg: "#14532d", darkText: "#86efac" }, // green
+  { bg: "#fef3c7", text: "#92400e", darkBg: "#451a03", darkText: "#fde68a" }, // amber
+  { bg: "#fae8ff", text: "#86198f", darkBg: "#4a044e", darkText: "#f0abfc" }, // fuchsia
+  { bg: "#e0e7ff", text: "#3730a3", darkBg: "#1e1b4b", darkText: "#c7d2fe" }, // indigo
+  { bg: "#ffe4e6", text: "#9f1239", darkBg: "#4c0519", darkText: "#fda4af" }, // rose
+  { bg: "#f0fdf4", text: "#15803d", darkBg: "#052e16", darkText: "#bbf7d0" }, // emerald
+  { bg: "#fff7ed", text: "#9a3412", darkBg: "#431407", darkText: "#fed7aa" }, // orange
+  { bg: "#f5f3ff", text: "#5b21b6", darkBg: "#2e1065", darkText: "#ddd6fe" }, // violet
+  { bg: "#ecfdf5", text: "#065f46", darkBg: "#022c22", darkText: "#a7f3d0" }, // teal
+  { bg: "#fef9c3", text: "#854d0e", darkBg: "#422006", darkText: "#fef08a" }, // yellow
+  { bg: "#fdf2f8", text: "#9d174d", darkBg: "#500724", darkText: "#fbcfe8" }, // pink
 ];
 
 function hashString(str: string): number {
@@ -51,8 +51,12 @@ function getEntityColor(entityId: string): { bg: string; text: string } {
   if (entityId === "—") return { bg: "transparent", text: "inherit" };
   let cached = entityColorCache.get(entityId);
   if (cached) return cached;
-  const idx = hashString(entityId) % ENTITY_PALETTE.length;
-  cached = ENTITY_PALETTE[idx];
+  const entry = ENTITY_PALETTE[hashString(entityId) % ENTITY_PALETTE.length];
+  // Detect dark mode from document element
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  cached = isDark
+    ? { bg: entry.darkBg, text: entry.darkText }
+    : { bg: entry.bg, text: entry.text };
   entityColorCache.set(entityId, cached);
   return cached;
 }

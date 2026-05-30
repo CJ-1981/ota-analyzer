@@ -18,6 +18,8 @@ import {
   Settings,
   Play,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   Card,
@@ -71,8 +73,10 @@ import { parseFile, autoDetectColumns, normalizeData } from "@/lib/data-parser";
 import { computeAnalytics } from "@/lib/analytics";
 import type { AnalyticsResult } from "@/lib/analytics";
 import { generateReportHtml } from "@/lib/report-generator";
-import { TOOLTIP_CONTENT_STYLE } from "@/lib/chart-helpers";
+import { TOOLTIP_CONTENT_STYLE, getTooltipStyle } from "@/lib/chart-helpers";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { useChartColors } from "@/lib/useChartColors";
+import { useTheme } from "next-themes";
 
 import { StateBadge } from "@/components/StateBadge";
 import { TagInput } from "@/components/TagInput";
@@ -403,6 +407,8 @@ export default function Home() {
   };
 
   const isMobile = useIsMobile();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const cc = useChartColors();
 
   if (loading || !data) {
     return (
@@ -438,6 +444,16 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              <Sun className="h-4 w-4 dark:hidden" />
+              <Moon className="h-4 w-4 hidden dark:block" />
+            </Button>
             <Button variant="outline" onClick={downloadReport} className="gap-2">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Download Report</span>
@@ -987,21 +1003,21 @@ export default function Home() {
                         data={data.retryDistribution}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={cc.gridStroke} />
                         <XAxis
                           dataKey="attempts"
-                          tick={{ fontSize: 11, fill: "#757575" }}
+                          tick={{ fontSize: 11, fill: cc.tickFill }}
                           label={{
                             value: "# Attempts",
                             position: "insideBottom",
                             offset: -2,
                             fontSize: 10,
-                            fill: "#757575",
+                            fill: cc.tickFill,
                           }}
                         />
-                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
+                        <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={TOOLTIP_CONTENT_STYLE}
+                          contentStyle={getTooltipStyle()}
                           formatter={(value: number) => [
                             `${value.toLocaleString()} ${entityLabel.toLowerCase()}s`,
                             entityLabel + "s",
@@ -1038,18 +1054,18 @@ export default function Home() {
                         data={data.timeSeries}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={cc.gridStroke} />
                         <XAxis
                           dataKey="date"
-                          tick={{ fontSize: 10, fill: "#757575" }}
+                          tick={{ fontSize: 10, fill: cc.tickFill }}
                           tickFormatter={(v) => v.slice(5)}
                           angle={-45}
                           textAnchor="end"
                           height={55}
                         />
-                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
+                        <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={TOOLTIP_CONTENT_STYLE}
+                          contentStyle={getTooltipStyle()}
                         />
                         <Legend
                           onClick={handleLegendClick}
@@ -1142,17 +1158,17 @@ export default function Home() {
                         data={data.failureProgressBuckets}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={cc.gridStroke} />
                         <XAxis
                           dataKey="range"
-                          tick={{ fontSize: 10, fill: "#757575" }}
+                          tick={{ fontSize: 10, fill: cc.tickFill }}
                           angle={-45}
                           textAnchor="end"
                           height={60}
                         />
-                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
+                        <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={TOOLTIP_CONTENT_STYLE}
+                          contentStyle={getTooltipStyle()}
                           formatter={(value: number) => [
                             `${value} failures`,
                             "Count",
@@ -1188,18 +1204,18 @@ export default function Home() {
                         data={data.wastedByCondition}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={cc.gridStroke} />
                         <XAxis
                           dataKey="condition"
-                          tick={{ fontSize: isMobile ? 9 : 10, fill: "#000000", fontWeight: 700 }}
+                          tick={{ fontSize: isMobile ? 9 : 10, fill: cc.labelFill, fontWeight: 700 }}
                           angle={isMobile ? -35 : -25}
                           textAnchor="end"
                           height={isMobile ? 70 : 55}
                           interval={0}
                         />
-                        <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
+                        <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                         <Tooltip
-                          contentStyle={TOOLTIP_CONTENT_STYLE}
+                          contentStyle={getTooltipStyle()}
                           formatter={(value: number, name: string) => {
                             if (name === "wasted_gb")
                               return [`${value} GB`, wasteLabel];
@@ -1246,18 +1262,18 @@ export default function Home() {
                       data={data.wastedByCondition}
                       margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={cc.gridStroke} />
                       <XAxis
                         dataKey="condition"
-                        tick={{ fontSize: isMobile ? 9 : 10, fill: "#000000", fontWeight: 700 }}
+                        tick={{ fontSize: isMobile ? 9 : 10, fill: cc.labelFill, fontWeight: 700 }}
                         angle={isMobile ? -35 : -25}
                         textAnchor="end"
                         height={isMobile ? 70 : 55}
                         interval={0}
                       />
-                      <YAxis tick={{ fontSize: 11, fill: "#757575" }} />
+                      <YAxis tick={{ fontSize: 11, fill: cc.tickFill }} />
                       <Tooltip
-                        contentStyle={TOOLTIP_CONTENT_STYLE}
+                        contentStyle={getTooltipStyle()}
                         formatter={(value: number, name: string) => {
                           if (name === "count")
                             return [`${value.toLocaleString()}`, "Failures"];
