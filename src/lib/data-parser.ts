@@ -1,17 +1,58 @@
 import type { ColumnMapping, RawDataRow, NormalizedEntry } from "./types";
 
 /* ------------------------------------------------------------------ */
-/*  CSV Parser                                                         */
+/*  Auto-detect delimiter from the first line of text                    */
+/* ------------------------------------------------------------------ */
+const CANDIDATE_DELIMITERS = [",", ";", "|", "\t"];
+
+function detectDelimiter(firstLine: string): string {
+  // Score each delimiter by: consistency across the line + field count
+  let bestDelim = ",";
+  let bestScore = -1;
+
+  for (const delim of CANDIDATE_DELIMITERS) {
+    // Quick filter: skip if delimiter not present at all
+    if (!firstLine.includes(delim)) continue;
+
+    const fields = firstLine.split(delim);
+    const count = fields.length;
+
+    // A valid delimiter should produce at least 2 fields
+    if (count < 2) continue;
+
+    // Score: field count (more fields = more likely) + consistency bonus
+    // Prefer delimiters that produce consistent non-empty fields
+    let score = count * 10;
+    let nonEmpty = 0;
+    for (const f of fields) {
+      const t = f.trim();
+      if (t.length > 0) nonEmpty++;
+    }
+    // Deduct for empty fields (less likely for a good delimiter)
+    score -= (count - nonEmpty) * 5;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestDelim = delim;
+    }
+  }
+
+  return bestDelim;
+}
+
+/* ------------------------------------------------------------------ */
+/*  CSV Parser (supports auto-detected delimiters)                       */
 /* ------------------------------------------------------------------ */
 export function parseCSV(text: string): RawDataRow[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) return [];
 
-  const headers = parseCSVRow(lines[0]);
+  const delimiter = detectDelimiter(lines[0]);
+  const headers = parseCSVRow(lines[0], delimiter);
   const rows: RawDataRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVRow(lines[i]);
+    const values = parseCSVRow(lines[i], delimiter);
     if (values.length === 0) continue;
     const row: RawDataRow = {};
     for (let j = 0; j < headers.length; j++) {
@@ -26,7 +67,7 @@ export function parseCSV(text: string): RawDataRow[] {
   return rows;
 }
 
-function parseCSVRow(line: string): string[] {
+function parseCSVRow(line: string, delimiter: string): string[] {
   const result: string[] = [];
   let current = "";
   let inQuotes = false;
@@ -47,7 +88,7 @@ function parseCSVRow(line: string): string[] {
     } else {
       if (ch === '"') {
         inQuotes = true;
-      } else if (ch === "," || ch === "\t") {
+      } else if (delimiter.length === 1 && ch === delimiter) {
         result.push(current);
         current = "";
       } else {
@@ -208,15 +249,11 @@ export function parseFile(
     }
   }
 
-  // CSV or TSV
-  if (ext === "tsv") {
-    return parseCSV(trimmed.replace(/\t/g, ","));
-  }
-
-  // Try CSV first, then JSON
+  // CSV / TSV / semicolon / pipe — auto-detect delimiter
   const csvResult = parseCSV(trimmed);
   if (csvResult.length > 0) return csvResult;
 
+  // Try JSON as fallback
   try {
     return parseJSON(trimmed);
   } catch {
