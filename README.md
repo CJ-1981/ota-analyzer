@@ -27,25 +27,25 @@
 
 ![Dashboard Overview](docs/screenshot-overview.png)
 
-KPI cards show total vehicles, retries, success rate, and wasted data. The state transition flow visualizes how vehicles move through the OTA pipeline stages (Initiated → Authenticating → Downloading → Verifying → Installing → Completed).
+KPI cards show total vehicles, retries, success rate, and wasted data. Entity and state filters apply globally across all tabs. The tab bar provides quick access to System Analytics, Operational Drilldown, and Wasted Data views.
 
-### Operational Drilldown
+### System Analytics
 
-![Operational Drilldown](docs/screenshot-drilldown.png)
+![System Analytics](docs/screenshot-system-analytics.png)
 
-Time-series chart tracks events, successes, and failures over time. The log entries table supports per-column text filtering and sortable headers — click any header to sort ascending/descending, type in the filter row to search within any column.
+Sankey-style state transition flow visualizes how vehicles move through the OTA pipeline stages (Initiated → Authenticating → Downloading → Verifying → Installing → Completed). The funnel chart shows drop-off at each stage. A state transition summary table lists the top transitions by count.
 
 ### Wasted Data Analysis
 
-![Wasted Data Analysis](docs/screenshot-wasted.png)
+![Wasted Data Analysis](docs/screenshot-wasted-data.png)
 
-Histogram shows failure progress distribution — where in the download/install process vehicles tend to fail. Bar chart breaks down wasted bandwidth by failure condition (network timeout, disk full, auth failure, etc.).
+Failure progress histogram shows where in the download/install process vehicles tend to fail. Vertical bar charts break down wasted bandwidth and failure counts by condition type (network timeout, disk full, auth failure, checksum mismatch, etc.). The breakdown table provides detailed per-condition metrics.
 
-### Configuration Panel
+### Mobile View
 
-![Configuration Panel](docs/screenshot-config.png)
+![Mobile View](docs/screenshot-mobile.png)
 
-Easily switch between demo mode and custom data upload. Configure OTA package size, pipeline states, success/failure/retry states, and column mappings. All changes take effect immediately.
+Fully responsive layout adapts to mobile screens with stacked cards, scrollable tab bar, and touch-friendly controls.
 
 ## Tech Stack
 
