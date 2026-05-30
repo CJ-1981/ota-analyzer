@@ -524,36 +524,37 @@ export default function Home() {
                     </div>
                   </RadioGroup>
 
-                  {mode === "demo" && (
-                    <div className="flex items-end gap-3">
-                      <div className="flex-1 max-w-[200px] space-y-1">
-                        <Label className="text-xs text-body font-bold uppercase tracking-wider">
-                          OTA Package Size (MB)
-                        </Label>
-                        <Input
-                          type="number"
-                          value={dataSizeInput}
-                          onChange={(e) => setDataSizeInput(e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          onBlur={() => {
-                            const val = parseFloat(dataSizeInput);
-                            if (!isNaN(val) && val > 0) {
-                              setDataSizeMB(val);
-                              setDataSizeInput(String(val));
-                            } else {
-                              setDataSizeInput(String(dataSizeMB));
-                            }
-                          }}
-                          className="h-8 text-xs"
-                          min={1}
-                          step={10}
-                        />
-                      </div>
-                      <p className="text-xs text-body pb-2">
-                        Simulate different OTA package sizes — affects bandwidth and waste metrics
-                      </p>
+                  {/* OTA Package Size — applies to both demo and custom mode */}
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1 max-w-[200px] space-y-1">
+                      <Label className="text-xs text-body font-bold uppercase tracking-wider">
+                        OTA Package Size (MB)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={dataSizeInput}
+                        onChange={(e) => setDataSizeInput(e.target.value)}
+                        onFocus={(e) => e.target.select()}
+                        onBlur={() => {
+                          const val = parseFloat(dataSizeInput);
+                          if (!isNaN(val) && val > 0) {
+                            setDataSizeMB(val);
+                            setDataSizeInput(String(val));
+                          } else {
+                            setDataSizeInput(String(dataSizeMB));
+                          }
+                        }}
+                        className="h-8 text-xs"
+                        min={1}
+                        step={10}
+                      />
                     </div>
-                  )}
+                    <p className="text-xs text-body pb-2">
+                      {mode === "demo"
+                        ? "Simulate different OTA package sizes — affects bandwidth and waste metrics"
+                        : "Override package size for waste calculations (if not in your file)"}
+                    </p>
+                  </div>
 
                   {mode === "custom" && (
                     <div className="space-y-3">
