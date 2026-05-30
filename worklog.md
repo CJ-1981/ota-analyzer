@@ -24,3 +24,22 @@ Stage Summary:
 - 20 files changed, 298 insertions, 260 deletions
 - PR link: https://github.com/CJ-1981/ota-analyzer/pull/new/feat/wired-design-system
 - All Wired design system principles applied: square corners, no shadows, black-white duet, serif display/sans labels, hairline dividers, light-only, monochrome charts, editorial typography
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix mobile tab label overlap and regenerate README screenshots
+
+Work Log:
+- Analyzed TabsTrigger component — found `h-9` fixed height, `px-4` padding, `text-xs tracking-wider whitespace-nowrap` caused overflow on mobile (375px viewport, ~114px per grid column)
+- Fixed TabsTrigger: responsive padding `px-1 sm:px-4`, text `text-[10px] sm:text-xs`, icon size `size-3 sm:size-4`, gap `gap-0.5 sm:gap-1.5`, tracking `tracking-normal sm:tracking-wider`, added `truncate` for clean clipping
+- Fixed TabsList: changed `h-9` to `min-h-9` for flexible height
+- Created `scripts/capture-screenshots.ts` using Playwright route interception (no external HTTP server needed)
+- Captured all 4 README screenshots: overview (73KB), system-analytics (73KB), wasted-data (61KB), mobile (32KB)
+- Verified Wasted Data screenshot now shows correct tab content (Breakdown section visible, active tab = "Wasted Data")
+- Verified Mobile screenshot shows all 3 tabs without overlap
+
+Stage Summary:
+- Commit `e216eec` pushed: mobile tab fix + regenerated screenshots
+- Files modified: `src/components/ui/tabs.tsx`, `docs/screenshot-*.png`
+- New file: `scripts/capture-screenshots.ts` (Playwright screenshot generation utility)
